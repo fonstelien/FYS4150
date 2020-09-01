@@ -21,9 +21,25 @@ using namespace std;
 
 /* Prints program usage */
 void print_usage() {
-  cout << "usage: " << endl;
+  cout << "usage: project1 [-h | -a | -g | -d | -l | -t] [-e] n" << endl;
+  cout << "  -h   print this text" << endl;
+  cout << "  -a   run all" << endl;
+  cout << "  -g   run general tridiagonal" << endl;
+  cout << "  -d   run optimized for 2nd derivative" << endl;
+  cout << "  -l   run using armadillo LU decomposition" << endl;
+  cout << "  -t   test all implementations against arma::solve()" << endl;
+  cout << "       exit value 0 indicates success;" << endl;
+  cout << "       11,12,13 failure in general, 2nd derivative, or LU decomposition" << endl;
+  cout << "  -e   print log10 of relative error" << endl;
+  cout << "   n   number of calculation points" << endl;
+  cout << "" << endl;
+  cout << " Results write to stdout: 1st pos. ms CPU time; 2nd pos. log10 rel. err." << endl;
+  cout << " For -a option CPU time are in order general, 2nd deriv., LU decomp." << endl;
+  cout << "" << endl;
+  cout << " Example:" << endl;
+  cout << " $ project1 -ae 1000" << endl;
+  cout << " 0.492 0.131 422.61 -5.0801" << endl;
 }
-
 
 colvec solve_general(rowvec a, rowvec b, rowvec c, colvec b_tilde);
 colvec solve_2nd_derivative(colvec b_tilde);
@@ -47,7 +63,7 @@ int main(int argc, char *argv[])
   double running_times[10];
   
   // Parsing args
-  if (argc < 3) {
+  if (argc < 2) {
     cerr << "error: missing arguments" << endl;
     print_usage();
     exit(1);
@@ -84,7 +100,7 @@ int main(int argc, char *argv[])
     }
   }
 
-  if (argc - optind < 1) {
+  if (argc - optind < 1 || mode < 0) {
     cerr << "error: missing arguments" << endl;
     print_usage();
     exit(1);
