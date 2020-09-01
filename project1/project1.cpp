@@ -1,55 +1,185 @@
 #include <iostream>
 #include <armadillo>
+#include <unistd.h>
+#include <time.h>
 
 using namespace arma;
 using namespace std;
 
+#define LAPSED_TIME(t0) (((double) (clock() - t0)) / CLOCKS_PER_SEC * 1000)
+
+// Calculation range
+#define START_RANGE 0.
+#define END_RANGE 1.
+
+// Program modes
+#define RUN_ALL 0
+#define GENERAL 1
+#define DERIVATIVE 2
+#define LIBRARY 3
+#define TEST 4
+
+/* Prints program usage */
+void print_usage() {
+  cout << "usage: " << endl;
+}
+
+
 colvec solve_general(rowvec a, rowvec b, rowvec c, colvec b_tilde);
 colvec solve_2nd_derivative(colvec b_tilde);
 colvec solve_LU(mat A, colvec b_tilde);
-colvec relative_errors(colvec exact, colvec calculated);
-mat generate_A(rowvec a, rowvec b, rowvec c);
+colvec log_eps(colvec exact, colvec approximated);
+mat generate_A_matrix(rowvec a, rowvec b, rowvec c);
+int run_test(rowvec a, rowvec b, rowvec c, colvec b_tilde);
 
 int main(int argc, char *argv[])
 {
-  double start_rng = 0.;
-  double end_rng = 1.;
-  int n = (int) 4;
-  double h = (end_rng-start_rng)/(n+1);
+  int n;
+  int opt;
+  int mode = -1;
+  bool calc_eps = false;
+  double h;
+  double max_eps = -1;
+  colvec solution;
+  rowvec a, b, c;
+  mat A;
+  clock_t start_time;
+  double running_times[10];
+  
+  // Parsing args
+  if (argc < 3) {
+    cerr << "error: missing arguments" << endl;
+    print_usage();
+    exit(1);
+   }
 
-  // // Init diagonals
-  // rowvec a = randu<rowvec>(n);
-  // rowvec b = randu<rowvec>(n);
-  // rowvec c = randu<rowvec>(n);
+  opterr = 0;
+  while ((opt = getopt(argc, argv, "hagdlte")) != -1) {
+    switch (opt) {
+    case 'h':
+      print_usage();
+      exit(0);
+    case 'a':
+      mode = RUN_ALL;
+      continue;
+    case 'g':
+      mode = GENERAL;
+      continue;
+    case 'd':
+      mode = DERIVATIVE;
+      continue;
+    case 'l':
+      mode = LIBRARY;
+      continue;
+    case 't':
+      mode = TEST;
+      continue;
+    case 'e':
+      calc_eps = true;
+      continue;
+    default:
+      cerr << "error: unknown option: " << (char) optopt << endl;
+      print_usage();
+      exit(1);
+    }
+  }
 
-  // Init x,b in Ax = b
-  colvec x = linspace<colvec>(start_rng+h, end_rng-h, n);  // Skip range endpoints
+  if (argc - optind < 1) {
+    cerr << "error: missing arguments" << endl;
+    print_usage();
+    exit(1);
+  }
+
+  n = atoi(argv[optind++]);
+  h = (END_RANGE-START_RANGE)/(n+1);
+  
+  // Initialize vector of constants b_tilde (b in the Ax = b equation)
+  colvec x = linspace<colvec>(START_RANGE+h, END_RANGE-h, n);  // Skip range endpoints
   colvec b_tilde = flipud(h*h*100*exp(-10*x));
 
-  colvec u = flipud(1 - (1 - std::exp((double) -10.))*x - exp(-10*x));
-  colvec solution_2n_derivative = solve_2nd_derivative(b_tilde);
-  colvec eps = relative_errors(u, solution_2n_derivative);
-  cout << scientific;
-  cout.precision(10);
-  cout << "max relative error=" << max(eps) << endl;
-  cout << "min relative error=" << min(eps) << endl;
+  if (mode != DERIVATIVE) {
+    a = zeros<rowvec>(n) - 1;
+    b = zeros<rowvec>(n) + 2;
+    c = zeros<rowvec>(n) - 1;
+  }
+  
+  // Run calculations
+  switch (mode) {
+  case RUN_ALL:
+    // Gemeral
+    start_time = clock();
+    solution = solve_general(a, b, c, b_tilde);
+    running_times[GENERAL] = LAPSED_TIME(start_time);
 
-  x.print("x");
-  
-  // eps.print("eps");
-  
-  // colvec solution_arma = solve_arma(a, b, c, b_tilde);
-  // colvec solution_general = solve_general(a, b, c, b_tilde);
-  // (solution_general-solution_arma).print("control general");
+    // 2nd derivative
+    start_time = clock();
+    solution = solve_2nd_derivative(b_tilde);
+    running_times[DERIVATIVE] = LAPSED_TIME(start_time);
 
-  // solution_arma = solve_arma(zeros<rowvec>(n)-1, zeros<rowvec>(n)+2, zeros<rowvec>(n)-1, b_tilde);
-  // colvec solution_2n_derivative = solve_2nd_derivative(b_tilde);  
-  // (solution_2n_derivative-solution_arma).print("control 2nd derivative");
-  
-  // colvec solution_arma = solve(generate_A(a, b, c), b_tilde);
-  // colvec solution_LU = solve_LU(generate_A(a, b, c), b_tilde);
-  // (solution_LU-solution_arma).print("control general");
-  
+    // Library
+    A = generate_A_matrix(a, b, c);
+    start_time = clock();
+    solution = solve_LU(A, b_tilde);
+    running_times[LIBRARY] = LAPSED_TIME(start_time);
+    break;
+    
+  case GENERAL:
+    start_time = clock();
+    solution = solve_general(a, b, c, b_tilde);
+    running_times[GENERAL] = LAPSED_TIME(start_time);
+    break;
+    
+  case DERIVATIVE:
+    start_time = clock();
+    solution = solve_2nd_derivative(b_tilde);
+    running_times[DERIVATIVE] = LAPSED_TIME(start_time);
+    break;
+    
+  case LIBRARY:
+    A = generate_A_matrix(a, b, c);
+    start_time = clock();
+    solution = solve_LU(A, b_tilde);
+    running_times[LIBRARY] = LAPSED_TIME(start_time);
+    break;
+
+  case TEST:
+    exit(run_test(a, b, c, b_tilde));
+    
+  default:
+    cerr << "error: unknown mode" << endl;
+    exit(-1);
+  }
+
+  // Error calculation
+  if (calc_eps) {
+    colvec exact = flipud(1 - (1 - std::exp((double) -10.))*x - exp(-10*x));
+    colvec eps = log_eps(exact, solution);
+    if (!eps.is_empty())
+      max_eps = max(eps);
+  }
+
+  // Print results
+  cout.precision(5);
+  switch (mode) {
+  case RUN_ALL:
+    cout << running_times[GENERAL] << " " << running_times[DERIVATIVE] << " " \
+	 << running_times[LIBRARY];
+    break;
+  case GENERAL:
+    cout << running_times[GENERAL];
+    break;
+  case DERIVATIVE:
+    cout << running_times[DERIVATIVE];
+    break;
+  case LIBRARY:
+    cout << running_times[LIBRARY];
+    break;
+  }
+
+  if (calc_eps)
+    cout << " " << max_eps;
+  cout << endl;
+    
   return 0;
 }
 
@@ -93,7 +223,7 @@ colvec solve_2nd_derivative(colvec b_tilde) {
   return solution;
 }
 
-mat generate_A(rowvec a, rowvec b, rowvec c) {
+mat generate_A_matrix(rowvec a, rowvec b, rowvec c) {
   int n = a.n_cols;
   rowvec aa = a;
   rowvec cc = c;
@@ -120,16 +250,41 @@ colvec solve_LU(mat A, colvec b_tilde) {
   return solve(U, y);
 }
 
-colvec relative_errors(colvec exact, colvec calculated) {
+colvec log_eps(colvec exact, colvec approximated) {
   colvec eps;
 
   // Check if exact solution vector has zeros
   if (min(abs(exact)) == 0.) {
-    cerr << "error: cannot calculate relative error; exact solution contains one or more zero" << endl;
-    return NULL;
+    cerr << "error: cannot calculate relative error; "		\
+	 << "exact solution contains one or more zeros." << endl;
+    return eps;
   }
 
-  eps = abs((calculated - exact)/exact);
-  return eps;
-  // return log10(eps);
+  eps = abs((approximated - exact)/exact);
+  return log10(eps);
+}
+
+int run_test(rowvec a, rowvec b, rowvec c, colvec b_tilde) {
+  mat A;
+  colvec solution, arma_solution;
+
+  A = generate_A_matrix(a, b, c);
+  arma_solution = solve(A, b_tilde);
+  
+  if (max(abs(arma_solution - solve_general(a, b, c, b_tilde))) > 1E-10) {
+    cerr << "test error: solve_general()" << endl;
+    return 11;    
+  }
+
+  if (max(abs(arma_solution - solve_2nd_derivative(b_tilde))) > 1E-10) {
+    cerr << "test error: solve_2nd_derivative()" << endl;
+    return 12;      
+  }
+
+  if (max(abs(arma_solution - solve_LU(A, b_tilde))) > 1E-10) {
+    cerr << "test error: solve_LU()" << endl;
+    return 13;    
+  }
+
+  return 0;
 }
