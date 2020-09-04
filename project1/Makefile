@@ -8,7 +8,15 @@ else
 OPTIMIZEFLAGS := -O3
 endif
 
-CCFLAGS := -g -Wall -Wextra -Wno-unused -Wno-unused-parameter -Wno-unused-result -larmadillo $(OPTIMIZEFLAGS)
+ifdef debug
+DEBUGFLAGS := -g
+OPTIMIZEFLAGS := -O0
+else
+DEBUGFLAGS := -Wno-unused -Wno-unused-parameter -Wno-unused-result
+endif
+
+
+CCFLAGS := -Wall -Wextra -larmadillo $(OPTIMIZEFLAGS) $(DEBUGFLAGS)
 
 .PHONY: clean rm
 

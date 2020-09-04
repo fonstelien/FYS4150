@@ -17,11 +17,13 @@ using namespace std;
 #define GENERAL 1
 #define DERIVATIVE 2
 #define LIBRARY 3
-#define TEST 4
+#define EPS 4
+#define CLOSED_FORM 5
+#define TEST 6
 
 /* Prints program usage */
 void print_usage() {
-  cout << "usage: project1 [-h | -a | -g | -d | -l | -t] [-e] n" << endl;
+  cout << "usage: project1 [-h | -a | -g | -d | -l | -t] [-epc] n" << endl;
   cout << "  -h   print this text" << endl;
   cout << "  -a   run all" << endl;
   cout << "  -g   run general tridiagonal" << endl;
@@ -31,34 +33,43 @@ void print_usage() {
   cout << "       exit value 0 indicates success;" << endl;
   cout << "       11,12,13 failure in general, 2nd derivative, or LU decomposition" << endl;
   cout << "  -e   print log10 of relative error" << endl;
+  cout << "  -p   print numerical solution to stdout in csv format (see Examples)" << endl;
+  cout << "  -c   print closed-form solution to stdout in csv format (see Examples)" << endl;
   cout << "   n   number of calculation points" << endl;
   cout << "" << endl;
-  cout << " Results write to stdout: 1st pos. ms CPU time; 2nd pos. log10 rel. err." << endl;
+  cout << " Results write to stdout: 1st pos is always n." << endl;
   cout << " For -a option CPU time are in order general, 2nd deriv., LU decomp." << endl;
   cout << "" << endl;
-  cout << " Example:" << endl;
-  cout << " $ project1 -ae 1000" << endl;
-  cout << " 0.492 0.131 422.61 -5.0801" << endl;
+  cout << " Examples:" << endl;
+  cout << " $ project1 -a 1000" << endl;
+  cout << " 1000, 0.492, 0.131, 422.61" << endl;
+  cout << " $ project1 -dp 4" << endl;
+  cout << " xi, v[xi]" << endl;
+  cout << " 2.00000e-01, 1.44596e-01" << endl;
+  cout << " 4.00000e-01, 2.87850e-01" << endl;
+  cout << " 6.00000e-01, 4.21188e-01" << endl;
+  cout << " 8.00000e-01, 4.81265e-01" << endl;
 }
 
-colvec solve_general(rowvec a, rowvec b, rowvec c, colvec b_tilde);
+colvec solve_tridiag(rowvec a, rowvec b, rowvec c, colvec b_tilde);
 colvec solve_2nd_derivative(colvec b_tilde);
-colvec solve_LU(mat A, colvec b_tilde);
+colvec solve_LU(mat L, mat U, colvec b_tilde);
+colvec closed_form_solution(colvec x);
 colvec log_eps(colvec exact, colvec approximated);
 mat generate_A_matrix(rowvec a, rowvec b, rowvec c);
-int run_test(rowvec a, rowvec b, rowvec c, colvec b_tilde);
+int run_test(mat L, mat U, rowvec a, rowvec b, rowvec c, colvec b_tilde);
 
 int main(int argc, char *argv[])
 {
   int n;
   int opt;
   int mode = -1;
-  bool calc_eps = false;
+  bool print_solution = false;
   double h;
   double max_eps = -1;
   colvec solution;
   rowvec a, b, c;
-  mat A;
+  mat L, U;
   clock_t start_time;
   double running_times[10];
   
@@ -70,7 +81,7 @@ int main(int argc, char *argv[])
    }
 
   opterr = 0;
-  while ((opt = getopt(argc, argv, "hagdlte")) != -1) {
+  while ((opt = getopt(argc, argv, "hagdltepc")) != -1) {
     switch (opt) {
     case 'h':
       print_usage();
@@ -91,7 +102,14 @@ int main(int argc, char *argv[])
       mode = TEST;
       continue;
     case 'e':
-      calc_eps = true;
+      mode = EPS;
+      continue;
+    case 'p':
+      print_solution = true;
+      continue;
+    case 'c':
+      mode = CLOSED_FORM;
+      print_solution = true;
       continue;
     default:
       cerr << "error: unknown option: " << (char) optopt << endl;
@@ -118,13 +136,21 @@ int main(int argc, char *argv[])
     b = zeros<rowvec>(n) + 2;
     c = zeros<rowvec>(n) - 1;
   }
+
+  if (mode == RUN_ALL || mode == LIBRARY || mode == TEST) {
+    mat A;
+
+    A = generate_A_matrix(a, b, c);
+    lu(L, U, A);  // Permutation matrix not needed
+  }
+
   
   // Run calculations
   switch (mode) {
   case RUN_ALL:
     // Gemeral
     start_time = clock();
-    solution = solve_general(a, b, c, b_tilde);
+    solution = solve_tridiag(a, b, c, b_tilde);
     running_times[GENERAL] = LAPSED_TIME(start_time);
 
     // 2nd derivative
@@ -133,15 +159,14 @@ int main(int argc, char *argv[])
     running_times[DERIVATIVE] = LAPSED_TIME(start_time);
 
     // Library
-    A = generate_A_matrix(a, b, c);
     start_time = clock();
-    solution = solve_LU(A, b_tilde);
+    solution = solve_LU(L, U, b_tilde);
     running_times[LIBRARY] = LAPSED_TIME(start_time);
     break;
     
   case GENERAL:
     start_time = clock();
-    solution = solve_general(a, b, c, b_tilde);
+    solution = solve_tridiag(a, b, c, b_tilde);
     running_times[GENERAL] = LAPSED_TIME(start_time);
     break;
     
@@ -152,54 +177,71 @@ int main(int argc, char *argv[])
     break;
     
   case LIBRARY:
-    A = generate_A_matrix(a, b, c);
     start_time = clock();
-    solution = solve_LU(A, b_tilde);
+    solution = solve_LU(L, U, b_tilde);
     running_times[LIBRARY] = LAPSED_TIME(start_time);
     break;
 
+  case EPS:
+    {
+      solution = solve_2nd_derivative(b_tilde);
+      colvec exact = closed_form_solution(x);
+      colvec eps = log_eps(exact, solution);
+      if (!eps.is_empty())
+	max_eps = max(eps);
+    }
+    break;
+    
+  case CLOSED_FORM:
+    solution = closed_form_solution(x);
+    break;
+    
   case TEST:
-    exit(run_test(a, b, c, b_tilde));
+    exit(run_test(L, U, a, b, c, b_tilde));
     
   default:
     cerr << "error: unknown mode" << endl;
     exit(-1);
   }
 
-  // Error calculation
-  if (calc_eps) {
-    colvec exact = flipud(1 - (1 - std::exp((double) -10.))*x - exp(-10*x));
-    colvec eps = log_eps(exact, solution);
-    if (!eps.is_empty())
-      max_eps = max(eps);
-  }
-
   // Print results
-  cout.precision(5);
-  switch (mode) {
-  case RUN_ALL:
-    cout << running_times[GENERAL] << " " << running_times[DERIVATIVE] << " " \
-	 << running_times[LIBRARY];
-    break;
-  case GENERAL:
-    cout << running_times[GENERAL];
-    break;
-  case DERIVATIVE:
-    cout << running_times[DERIVATIVE];
-    break;
-  case LIBRARY:
-    cout << running_times[LIBRARY];
-    break;
+  // Print calculation results
+  if (print_solution) {
+    cout << scientific;
+    cout.precision(5);
+    cout << "xi, v[xi]" << endl;
+    for (int i = 0; i < n; i++)
+      cout << x[i] << ", " << solution[i] << endl;
   }
 
-  if (calc_eps)
-    cout << " " << max_eps;
-  cout << endl;
-    
+  // Print CPU time and eps
+  else {  
+    cout.precision(5);
+    cout << n << ", ";
+    switch (mode) {
+    case RUN_ALL:
+      cout << running_times[GENERAL] << ", " << running_times[DERIVATIVE] << ", " \
+	   << running_times[LIBRARY] << endl;
+      break;
+    case GENERAL:
+      cout << running_times[GENERAL] << endl;
+      break;
+    case DERIVATIVE:
+      cout << running_times[DERIVATIVE] << endl;
+      break;
+    case LIBRARY:
+      cout << running_times[LIBRARY] << endl;
+      break;
+    case EPS:
+      cout << max_eps << endl;
+      break;
+    }
+  }
+  
   return 0;
 }
 
-colvec solve_general(rowvec a, rowvec b, rowvec c, colvec b_tilde) {
+colvec solve_tridiag(rowvec a, rowvec b, rowvec c, colvec b_tilde) {
   int n = b_tilde.n_rows;
   colvec solution = b_tilde;
   rowvec b_mod = b;
@@ -256,14 +298,18 @@ mat generate_A_matrix(rowvec a, rowvec b, rowvec c) {
   return A;
 }
 
-colvec solve_LU(mat A, colvec b_tilde) {
-  mat L, U;
+colvec solve_LU(mat L, mat U, colvec b_tilde) {
   colvec y;
-  
-  lu(L, U, A);  // Permutation matrix not needed
-  y = solve(L, b_tilde);
 
+  y = solve(L, b_tilde);
   return solve(U, y);
+}
+
+colvec closed_form_solution(colvec x) {
+  colvec solution;
+
+  solution = flipud(1 - (1 - std::exp((double) -10.))*x - exp(-10*x));
+  return solution;
 }
 
 colvec log_eps(colvec exact, colvec approximated) {
@@ -280,15 +326,15 @@ colvec log_eps(colvec exact, colvec approximated) {
   return log10(eps);
 }
 
-int run_test(rowvec a, rowvec b, rowvec c, colvec b_tilde) {
+int run_test(mat L, mat U, rowvec a, rowvec b, rowvec c, colvec b_tilde) {
   mat A;
-  colvec solution, arma_solution;
+  colvec arma_solution;
 
   A = generate_A_matrix(a, b, c);
   arma_solution = solve(A, b_tilde);
   
-  if (max(abs(arma_solution - solve_general(a, b, c, b_tilde))) > 1E-10) {
-    cerr << "test error: solve_general()" << endl;
+  if (max(abs(arma_solution - solve_tridiag(a, b, c, b_tilde))) > 1E-10) {
+    cerr << "test error: solve_tridiag()" << endl;
     return 11;    
   }
 
@@ -297,7 +343,7 @@ int run_test(rowvec a, rowvec b, rowvec c, colvec b_tilde) {
     return 12;      
   }
 
-  if (max(abs(arma_solution - solve_LU(A, b_tilde))) > 1E-10) {
+  if (max(abs(arma_solution - solve_LU(L, U, b_tilde))) > 1E-10) {
     cerr << "test error: solve_LU()" << endl;
     return 13;    
   }
