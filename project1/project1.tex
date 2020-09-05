@@ -7,6 +7,7 @@
 \usepackage{listings}
 \usepackage{color}
 \usepackage{tabularx}
+\usepackage{hyperref}
 
 \definecolor{dkgreen}{rgb}{0,0.6,0}
 \definecolor{gray}{rgb}{0.5,0.5,0.5}
@@ -38,7 +39,9 @@
 \maketitle
 
 \begin{abstract}
-In this assignment we investigate and compare three different algorithms for a numerical solution to Poisson's equation with Dirichlet boundary conditions on a domain $x \in \mathbb{R}$. The efficiency of the three algorithms are compared with regards to speed and memory. We will see that the efficiency of a purely library-based general algorithm for solving a system of linear equations is greatly surpassed when we take into account the tridiagonal character of the coefficient matrix; and that the efficiency is further increased when we take into account the fixed pattern of the diagonals in the equation. We will also see that the relative error of the numerical solution has a simple analytical representation which only depends on step size $h$. I have implemented the algorithms in C++ using the Armadillo library. See \lstinline|project1.cpp|.
+In this assignment we investigate and compare three different algorithms for a numerical solution to Poisson's equation with Dirichlet boundary conditions on a domain $x \in \mathbb{R}$. The efficiency of the three algorithms are compared with regards to speed and memory. We will see that the efficiency of a purely library-based general algorithm for solving a system of linear equations is greatly surpassed when we take into account the tridiagonal character of the coefficient matrix; and that the efficiency is further increased when we take into account the fixed pattern of the diagonals in the equation. We will also see that the relative error of the numerical solution has a simple analytical representation which only depends on step size $h$. 
+
+I have implemented the algorithms in C++ using the Armadillo library. See \lstinline|project1.cpp|, the \lstinline|Makefile| and a \lstinline|README.md| at my repository \url{https://github.com/fonstelien/FYS4150/tree/master/project1}.
 \end{abstract}
 
 \section*{A: Establishing the system of linear equations}
