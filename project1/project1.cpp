@@ -301,8 +301,8 @@ mat generate_A_matrix(rowvec a, rowvec b, rowvec c) {
 colvec solve_LU(mat L, mat U, colvec b_tilde) {
   colvec y;
 
-  y = solve(L, b_tilde);
-  return solve(U, y);
+  y = solve(trimatl(L), b_tilde);
+  return solve(trimatu(U), y);
 }
 
 colvec closed_form_solution(colvec x) {
