@@ -178,7 +178,32 @@ Counting the number of FLOPs needed to solve the tridiagonal $\mathbf{Av} = \mat
 N_{\text{tridiag}} = N_{\text{fwd}} + N_{\text{bwd}} = 9(n-1).
 \end{equation*}
 
-We should note that the above algorithm allows us to reuse the space which originally contained the description of the problem; that is $\mathbf{A}$ and $\mathbf{\tilde{b}}$; amd also that we have found an algorithm which will solve a set of $n$ equation in $\mathcal{O}(n)$ time. This means that it is objectively efficient and scales well. You will find my C++ implementation of this algorithm in \lstinline|solve_tridiagonal()|. 
+We should note that the above algorithm allows us to reuse the space which originally contained the description of the problem; that is $\mathbf{A}$ and $\mathbf{\tilde{b}}$; amd also that we have found an algorithm which will solve a set of $n$ equation in $\mathcal{O}(n)$ time. This means that it is objectively efficient and scales well. My C++ implementation: 
+
+\begin{lstlisting}
+/* General tridiagonal system solver*/
+colvec solve_tridiag(rowvec a, rowvec b, rowvec c, colvec b_tilde) {
+	int n = b_tilde.n_rows;
+	colvec solution = b_tilde;
+	rowvec b_mod = b;
+	
+	// Forward substitution
+	for (int i = 1; i < n; i++) {
+		double fac = a[i]/b_mod[i-1];
+		b_mod[i] -= fac*c[i-1];
+		solution[i] -= fac*solution[i-1];
+	}
+	
+	// Solving for the last row
+	solution[n-1] /= b_mod[n-1];
+	
+	// Backward substitution gives solution
+	for (int i = n-2; i > -1; i--)
+		solution[i] = (solution[i] - c[i]*solution[i+1])/b_mod[i];
+	
+	return solution;
+}
+\end{lstlisting}
 
 Let's move on and compare how the numerical approximation given in equation \ref{eqn:approx_2nd_der} performs relative to the closed-form solution. The assignment gives us the functions $f$ and the closed-form solution $u$ to the differential equation:
 
@@ -189,13 +214,13 @@ u(x) &= 1 - (1 - e^{-10})x - e^{-10x}.
 
 We insert $f_i = f(x_i) = f(hi)$ into our numerical approximation for various step sizes $h$ and observe from the plotted results in Figure \ref{fig:calc-results} below that the approximation $v_i$ approaches $u_i$ for decreasing $h$, as expected.
 
-\begin{figure}[t]
+\begin{figure}[h]
 	\includegraphics[width=1.2\linewidth]{calc-results.png}
 	\caption{Plot of the numerical solution to the Poisson equation vs the closed-form solution. When $n > 100$ we see that the numerical solution is very close to the closed-form.}
 	\label{fig:calc-results}
 \end{figure}
 
-\section*{C: Optimized numerical solution to the Poisson equation $-u''(x) = f(x)$}
+\section*{C: Optimized numerical solution to the Poisson equation}
 Let's now take into consideration the fixed form of the diagonals of the coefficient matrix
 
 \begin{equation*}
@@ -244,11 +269,34 @@ $\tilde{b}_{3}^{\ast} = 3\tilde{b}_3 - \tilde{b}_{2}^{\ast}$, with the general t
 \tilde{b}_{i}^{\ast} = i\tilde{b}_{i} + \tilde{b}_{i-1}^{\ast}
 \end{equation*}
 
-We now find $x_{n-1} = \frac{1}{n}(\tilde{b}_{n-1}^{\ast} + (n-1)\tilde{b}_{n}^{\ast}) = \tilde{b}_{n-1}^{\ast\ast}$, and again on general form $x_i = \frac{1}{i+1}(\tilde{b}_{i}^{\ast} + i\tilde{b}_{i+1}^{\ast}) = \tilde{b}_{i}^{\ast\ast}$, which gives us the solution
+We now find $v_{n-1} = \frac{1}{n}(\tilde{b}_{n-1}^{\ast} + (n-1)\tilde{b}_{n}^{\ast}) = \tilde{b}_{n-1}^{\ast\ast}$, and again on general form $v_i = \frac{1}{i+1}(\tilde{b}_{i}^{\ast} + i\tilde{b}_{i+1}^{\ast}) = \tilde{b}_{i}^{\ast\ast}$, which gives us the solution
 
 \begin{equation*}
 \mathbf{v} = \mathbf{\tilde{b}^{\ast\ast}}\text{.}
 \end{equation*}
+
+The resulting C++ implementation of this algorithm very much resembles \lstinline|solve_tridiag()| from Section B, but it's a bit simpler since there is less stuff to be done in the optimized Poisson algorithm, as seen in \lstinline|solve_posson()| below:
+
+\begin{lstlisting}
+/* Optimized Poisson system solver*/
+colvec solve_poisson(colvec b_tilde) {
+	int n = b_tilde.n_rows;
+	colvec solution = b_tilde;
+	
+	// Forward substitution
+	for (int i = 1; i < n; i++)
+		solution[i] = (i+1)*solution[i] + solution[i-1];
+	
+	// Solving for the last row
+	solution[n-1] /= (n+1);
+	
+	// Backward substitution gives solution
+	for (int i = n-2; i > -1; i--)
+		solution[i] = (solution[i] + (i+1)*solution[i+1])/(i+2);
+	
+	return solution;
+}
+\end{lstlisting}
 
 As mentioned above, this algorithm is optimized both with regards to speed and memory. Memory required to solve a given problem is limited to the memory needed to describe it. Counting the FLOPs, we see that since we know how the forward substitution will unfold, each $n-1$ rows require one multiplication and one addition, and $N_{\text{fwd}} = 2(n-1)$. Likewise for backward substitution, we only need one multiplication, one addition, and one division, and $N_{\text{bwd}} = 3(n-1)$. In total, the number of FLOPs required for a system of size $n$ is
 
@@ -260,7 +308,7 @@ Compared to the general case discussed in Section B, this of course is quite goo
 
 
 \begin{table}[ht]
-\caption{CPU time needed to solve the Poisson equation. The algorithm optimized for the Poisson equation has better speedup than expected from counting the FLOPs. The reason is fewer read/write operations.}
+\caption{CPU time needed to solve the Poisson equation. The algorithm optimized for the Poisson equation has better speedup than expected from counting the FLOPs. The reason is fewer read/write operations. Results are averaged over 5 runs.}
 \label{tab:CPU-times}
 \begin{center}
 \begin{tabular}{lrrr}
@@ -316,11 +364,10 @@ It is also interesting to see what happens as $h \rightarrow 0$. $\cosh 0 = 1$ a
 \lim_{h \to 0} \varepsilon = 1 - \lim_{h \to 0}\frac{50h^2}{\cosh 10h - 1}  = 1 - \lim_{h \to 0}\frac{10h}{\sinh 10h} = 1 - \lim_{h \to 0}\frac{1}{\cosh 10h} = 1-1 = 0 \text{.}
 \end{equation*}
 
-From Table \ref{tab:eps} we see that this mathematical error fits well with the errors that we find when we calculate it from the numerical solution. The difference is due to the rund-off error stemming from the limited precision in a \lstinline|double float|. We also see that up to about $n = 10^6$, the computer error decreases, before it starts to increase.
-
+From Table \ref{tab:eps} we see that this mathematical error fits well with the errors that we find when we calculate it from the numerical solution. The difference is due to the rund-off error stemming from the limited precision in a \lstinline|double float|. We also see that up to about $n = 10^6$, the computer error decreases, before it starts to increase, meaning that we will reach maximum accuracy in this region of $n$. The C++ implementation is given further below.
 
 \begin{table}[ht]
-\caption{Relative error for decreasing step size $h$ on a $\log_{10}$ scale. The Computed error follows the Mathematical error from Equation \ref{eqn:eps-math} closely up until $n = 10^5$, after which it starts to deviate, and even increase for about $n = 10^6$.}
+\caption{Relative error for decreasing step size $h$ on a $\log_{10}$ scale. The Computed error follows the Mathematical error from Equation \ref{eqn:eps-math} closely up until $n = 10^5$, after which it starts to deviate, and even increase for about $n = 10^6$. The mathematical error is calculated with the \lstinline|decimal| module in Python.}
 \label{tab:eps}
 \begin{center}
 \begin{tabular}{lrr}
@@ -340,7 +387,25 @@ From Table \ref{tab:eps} we see that this mathematical error fits well with the 
 \end{center}
 \end{table}
 
-\section*{E: Numerical solution by the $\mathbf{LU}$ decomposition of $\mathbf{A}$}
+\begin{lstlisting}
+/* Calculates the log10 relative error */
+colvec log_eps(colvec exact, colvec approximated) {
+	colvec eps;
+	
+	// Check if exact solution vector has zeros
+	if (min(abs(exact)) == 0.) {
+		cerr << "error: cannot calculate relative error; "		\
+		     << "exact solution contains one or more zeros." << endl;
+		return eps;
+	}
+	
+	eps = abs((approximated - exact)/exact);
+	return log10(eps);
+}
+\end{lstlisting}
+
+
+\section*{E: Numerical solution by the $\mathbf{LU}$ decomposition}
 If $\det \mathbf{A} \neq 0$, the decomposition of $\mathbf{A}$ into a lower-triangular matrix $\mathbf{L}$ and an upper-triangular matrix $\mathbf{U}$, where $\mathbf{A},\mathbf{L},\mathbf{U} \in \mathbb{R}^{n \times n}$, exists, such that
 
 
@@ -373,7 +438,7 @@ u_{11} & u_{12} & u_{13} & u_{14} \\
 \text{.}
 \end{equation}
 
-We will not discuss how to decompose $\mathbf{A}$ into $\mathbf{LU}$, since that is not in the scope of the assignment, but concentrate on the computational complexity of solving the set of equations which emerges from Equation \ref{eqn:ALU}. In general we have that $\mathbf{Av} = \mathbf{\tilde{b}}$, into which we insert $\mathbf{A} = \mathbf{LU}$, such that
+A tridiagonal matrix with diagonals $-1, 2, -1$ is obviously invertible, and hence $\det \mathbf{A} \neq 0$. We will not discuss how to decompose $\mathbf{A}$ into $\mathbf{LU}$, since that is not in the scope of the assignment, but concentrate on the computational complexity of solving the set of equations which emerges from Equation \ref{eqn:ALU}. In general we have that $\mathbf{Av} = \mathbf{\tilde{b}}$, into which we insert $\mathbf{A} = \mathbf{LU}$, such that
 
 \begin{equation*}
 \mathbf{Av} = \mathbf{LUv} = \mathbf{L}(\mathbf{Uv}) = \mathbf{\tilde{b}} 
@@ -431,12 +496,22 @@ Continuing in the same fashion we see that for the "U" operation we need $N_{\te
 N_{\text{LU}} = N_{\text{L}} + N_{\text{U}} = n(n-1) + n^2 = n(2n-1) \text{.}
 \end{equation*}
 
+The C++ implementation of the algorithm with Armadillo is very simple, but to ensure that the library takes advantage of the diagonal shape of the matrices, we need to pass this information in to \lstinline|arma:solve()| with the \lstinline|arma:trimatl()| and \lstinline|arma:trimatu()| arguments:
+
+\begin{lstlisting}
+/* Solver for LU decomposed system without permutation matrix */
+colvec solve_LU(mat L, mat U, colvec b_tilde) {
+	colvec y;
+	
+	y = solve(trimatl(L), b_tilde);
+	return solve(trimatu(U), y);
+}
+\end{lstlisting}
+
 Here we should note that the solution to a problem of size $n$ can be solved in $\mathcal{O}(n^2)$ time by LU decomposition, which is a factor $n$ better than the straight-forward row reduction runs in $\mathcal{O}(n^3)$ time. However, as Table \ref{tab:lu} shows, compared to the optimized Poisson algorithm discussed in Section C, the LU method is still slow. Description of the problem also requires $\mathcal{O}(n^2)$ space, in contrast to $\mathcal{O}(n)$ for the specialized algorithm, and for problems of size $n > 10^4$ or maybe $10^5$, the problem cannot at all be solved on a regular computer with the LU method due to memory restrictions.
 
-This result serves as an illustration of that great improvements both with regards to speed and memory usage can be achieved with optimized algorithms.
-
 \begin{table}[ht]
-\caption{CPU time required for the solution by LU matrix decomposition algorithm relative to the optimized Poisson algorithm.}
+\caption{CPU time required for the solution by LU matrix decomposition algorithm relative to the optimized Poisson algorithm. Results are averaged over 5 runs.}
 \label{tab:lu}
 \begin{center}
 \begin{tabular}{lrrr}
@@ -450,5 +525,8 @@ This result serves as an illustration of that great improvements both with regar
 \end{tabular}
 \end{center}
 \end{table}
+
+\section*{Discussion and conclusion}
+This exercise illustrates very well that great improvements both with regards to speed and memory usage can be achieved with optimized algorithms. We also see that if the problem at hand is \textit{large}, a simple solution with standardized library functions may not even be possible due to resource limitations.
 
 \end{document}

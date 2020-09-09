@@ -6,7 +6,11 @@
 using namespace arma;
 using namespace std;
 
-#define LAPSED_TIME(t0) (((double) (clock() - t0)) / CLOCKS_PER_SEC * 1000)
+// Number of runs for CPU time averaging
+#define NUM_RUNS 5
+
+// Milliseconds time CPU time between now and t0, divided by NUM_RUNS 
+#define AVERAGE_TIME(t0) (((double) (clock() - t0)) / CLOCKS_PER_SEC * 1000 / NUM_RUNS) // ms
 
 // Calculation range
 #define START_RANGE 0.
@@ -37,6 +41,8 @@ void print_usage() {
   cout << "  -c   print closed-form solution to stdout in csv format (see Examples)" << endl;
   cout << "   n   number of calculation points" << endl;
   cout << "" << endl;
+  cout << " -agdl without options -ep will run calculations " << NUM_RUNS \
+       << " times and output CPU time." << endl;
   cout << " Results write to stdout: 1st pos is always n." << endl;
   cout << " For -a option CPU time are in order general, 2nd deriv., LU decomp." << endl;
   cout << "" << endl;
@@ -52,11 +58,11 @@ void print_usage() {
 }
 
 colvec solve_tridiag(rowvec a, rowvec b, rowvec c, colvec b_tilde);
-colvec solve_2nd_derivative(colvec b_tilde);
+colvec solve_poisson(colvec b_tilde);
 colvec solve_LU(mat L, mat U, colvec b_tilde);
 colvec closed_form_solution(colvec x);
 colvec log_eps(colvec exact, colvec approximated);
-mat generate_A_matrix(rowvec a, rowvec b, rowvec c);
+mat generate_tridiag_matrix(rowvec a, rowvec b, rowvec c);
 int run_test(mat L, mat U, rowvec a, rowvec b, rowvec c, colvec b_tilde);
 
 int main(int argc, char *argv[])
@@ -72,6 +78,7 @@ int main(int argc, char *argv[])
   mat L, U;
   clock_t start_time;
   double running_times[10];
+  double accumulated_time = 0;
   
   // Parsing args
   if (argc < 2) {
@@ -140,7 +147,7 @@ int main(int argc, char *argv[])
   if (mode == RUN_ALL || mode == LIBRARY || mode == TEST) {
     mat A;
 
-    A = generate_A_matrix(a, b, c);
+    A = generate_tridiag_matrix(a, b, c);
     lu(L, U, A);  // Permutation matrix not needed
   }
 
@@ -150,41 +157,47 @@ int main(int argc, char *argv[])
   case RUN_ALL:
     // Gemeral
     start_time = clock();
-    solution = solve_tridiag(a, b, c, b_tilde);
-    running_times[GENERAL] = LAPSED_TIME(start_time);
+    for (int i = 0; i < NUM_RUNS; i++)
+      solution = solve_tridiag(a, b, c, b_tilde);
+    running_times[GENERAL] = AVERAGE_TIME(start_time);
 
     // 2nd derivative
     start_time = clock();
-    solution = solve_2nd_derivative(b_tilde);
-    running_times[DERIVATIVE] = LAPSED_TIME(start_time);
+    for (int i = 0; i < NUM_RUNS; i++)
+      solution = solve_poisson(b_tilde);
+    running_times[DERIVATIVE] = AVERAGE_TIME(start_time);
 
     // Library
     start_time = clock();
-    solution = solve_LU(L, U, b_tilde);
-    running_times[LIBRARY] = LAPSED_TIME(start_time);
+    for (int i = 0; i < NUM_RUNS; i++)
+      solution = solve_LU(L, U, b_tilde);
+    running_times[LIBRARY] = AVERAGE_TIME(start_time);
     break;
     
   case GENERAL:
     start_time = clock();
-    solution = solve_tridiag(a, b, c, b_tilde);
-    running_times[GENERAL] = LAPSED_TIME(start_time);
+    for (int i = 0; i < NUM_RUNS; i++)
+      solution = solve_tridiag(a, b, c, b_tilde);
+    running_times[GENERAL] = AVERAGE_TIME(start_time);
     break;
     
   case DERIVATIVE:
     start_time = clock();
-    solution = solve_2nd_derivative(b_tilde);
-    running_times[DERIVATIVE] = LAPSED_TIME(start_time);
+    for (int i = 0; i < NUM_RUNS; i++)
+      solution = solve_poisson(b_tilde);
+    running_times[DERIVATIVE] = AVERAGE_TIME(start_time);
     break;
     
   case LIBRARY:
     start_time = clock();
-    solution = solve_LU(L, U, b_tilde);
-    running_times[LIBRARY] = LAPSED_TIME(start_time);
+    for (int i = 0; i < NUM_RUNS; i++)
+      solution = solve_LU(L, U, b_tilde);
+    running_times[LIBRARY] = AVERAGE_TIME(start_time);
     break;
 
   case EPS:
     {
-      solution = solve_2nd_derivative(b_tilde);
+      solution = solve_poisson(b_tilde);
       colvec exact = closed_form_solution(x);
       colvec eps = log_eps(exact, solution);
       if (!eps.is_empty())
@@ -241,6 +254,7 @@ int main(int argc, char *argv[])
   return 0;
 }
 
+/* General tridiagonal system solver*/
 colvec solve_tridiag(rowvec a, rowvec b, rowvec c, colvec b_tilde) {
   int n = b_tilde.n_rows;
   colvec solution = b_tilde;
@@ -263,7 +277,8 @@ colvec solve_tridiag(rowvec a, rowvec b, rowvec c, colvec b_tilde) {
   return solution;
 }
 
-colvec solve_2nd_derivative(colvec b_tilde) {
+/* Optimized Poisson system solver*/
+colvec solve_poisson(colvec b_tilde) {
   int n = b_tilde.n_rows;
   colvec solution = b_tilde;
 
@@ -281,7 +296,8 @@ colvec solve_2nd_derivative(colvec b_tilde) {
   return solution;
 }
 
-mat generate_A_matrix(rowvec a, rowvec b, rowvec c) {
+/* Helper function for generating tridiagonal matrix with diagonals a, b, c */
+mat generate_tridiag_matrix(rowvec a, rowvec b, rowvec c) {
   int n = a.n_cols;
   rowvec aa = a;
   rowvec cc = c;
@@ -298,6 +314,7 @@ mat generate_A_matrix(rowvec a, rowvec b, rowvec c) {
   return A;
 }
 
+/* Solver for LU decomposed system without permutation matrix */
 colvec solve_LU(mat L, mat U, colvec b_tilde) {
   colvec y;
 
@@ -305,6 +322,7 @@ colvec solve_LU(mat L, mat U, colvec b_tilde) {
   return solve(trimatu(U), y);
 }
 
+/* Returns a vector with the closed-form solution */
 colvec closed_form_solution(colvec x) {
   colvec solution;
 
@@ -312,6 +330,7 @@ colvec closed_form_solution(colvec x) {
   return solution;
 }
 
+/* Calculates the log10 relative error */
 colvec log_eps(colvec exact, colvec approximated) {
   colvec eps;
 
@@ -326,11 +345,12 @@ colvec log_eps(colvec exact, colvec approximated) {
   return log10(eps);
 }
 
+/* Test all solve_* functions against arma:solve() */
 int run_test(mat L, mat U, rowvec a, rowvec b, rowvec c, colvec b_tilde) {
   mat A;
   colvec arma_solution;
 
-  A = generate_A_matrix(a, b, c);
+  A = generate_tridiag_matrix(a, b, c);
   arma_solution = solve(A, b_tilde);
   
   if (max(abs(arma_solution - solve_tridiag(a, b, c, b_tilde))) > 1E-10) {
@@ -338,8 +358,8 @@ int run_test(mat L, mat U, rowvec a, rowvec b, rowvec c, colvec b_tilde) {
     return 11;    
   }
 
-  if (max(abs(arma_solution - solve_2nd_derivative(b_tilde))) > 1E-10) {
-    cerr << "test error: solve_2nd_derivative()" << endl;
+  if (max(abs(arma_solution - solve_poisson(b_tilde))) > 1E-10) {
+    cerr << "test error: solve_poisson()" << endl;
     return 12;      
   }
 
