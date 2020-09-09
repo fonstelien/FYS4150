@@ -2,6 +2,7 @@
 You will find my implementation of the algorithms in project1.cpp. Compile with
 ```
 $ make
+g++ -std=c++11 project1.cpp -o project1 -Wall -Wextra -larmadillo -O3 -Wno-unused -Wno-unused-parameter -Wno-unused-result
 ```
 ... and then have a look at the `usage` for instructions on how to run it. Enjoy! :whale:
 ```
