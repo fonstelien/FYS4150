@@ -78,7 +78,6 @@ int main(int argc, char *argv[])
   mat L, U;
   clock_t start_time;
   double running_times[10];
-  double accumulated_time = 0;
   
   // Parsing args
   if (argc < 2) {
