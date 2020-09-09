@@ -2,6 +2,7 @@
 You will find my implementation of the algorithms in project1.cpp. Compile with
 ```
 $ make
+g++ -std=c++11 project1.cpp -o project1 -Wall -Wextra -larmadillo -O3 -Wno-unused -Wno-unused-parameter -Wno-unused-result
 ```
 ... and then have a look at the `usage` for instructions on how to run it. Enjoy! :whale:
 ```
@@ -20,6 +21,7 @@ usage: project1 [-h | -a | -g | -d | -l | -t] [-epc] n
   -c   print closed-form solution to stdout in csv format (see Examples)
    n   number of calculation points
 
+ -agdl without options -ep will run calculations 5 times and output CPU time.
  Results write to stdout: 1st pos is always n.
  For -a option CPU time are in order general, 2nd deriv., LU decomp.
 
@@ -32,5 +34,4 @@ usage: project1 [-h | -a | -g | -d | -l | -t] [-epc] n
  4.00000e-01, 2.87850e-01
  6.00000e-01, 4.21188e-01
  8.00000e-01, 4.81265e-01
-
 ```
