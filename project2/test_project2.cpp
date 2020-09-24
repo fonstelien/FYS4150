@@ -49,30 +49,36 @@ TEST_CASE("Sym. tridiag. max value on off-diagonal", "[sym-tri-max]") {
 TEST_CASE("Sym. tridiag. Toeplitz eigen", "[sym-tri-toeplitz-eigen]") {
   vec eigenvals_numerical, eigenvals_exact;
   mat eigenvecs_numerical, eigenvecs_exact;
-  int n = 5;
+  int n = 100;
   mat A = tridiag_sym_toeplitz(n, 2., -1.);
   mat S(n, n, fill::eye);
-  mat U1, U2;
+  mat U, V;
   
   // eig_sym(eigenvals_numerical, eigenvecs_numerical, A);
   eigenvals_exact = tridiag_sym_toeplitz_exact_eigenvals(A);
   eigenvecs_exact = tridiag_sym_toeplitz_exact_eigenvecs(A);
   sort_eigen(eigenvals_exact, eigenvecs_exact);
+  V = eigenvecs_exact;
 
   eigenvals_numerical = jacobi_solver(A, S, 1.E-9);
   sort_eigen(eigenvals_numerical, S);
-  U1 = S * eigenvecs_exact;
+  U = S * V;
   
-  U2 = eigenvecs_exact;
-  jacobi_solver(A, U2, 1.E-9);
+  // cout << S << endl;
+  // cout << V << endl;
+  // cout << U << endl;
   
   for (int i = 0; i < n; i++)
     REQUIRE(eigenvals_numerical[i] == Approx(eigenvals_exact[i]).epsilon(TOL));
-  
+
   for (int i = 0; i < n; i++) {
-    colvec u1 = eigenvecs_exact.col(i);
-    colvec n = eigenvecs_numerical.col(i);
-    REQUIRE(fabs(dot(e,n)) == Approx(norm(e)*norm(n)).epsilon(TOL));
+    vec u_i = U.col(i);
+    vec v_i = V.col(i);
+    for (int j = 0; j < n; j++) {
+      vec u_j = U.col(j);
+      vec v_j = V.col(j);
+      REQUIRE(fabs(dot(u_i, u_j)) == Approx(fabs(dot(v_i, v_j))).margin(TOL));
+    }
   }
 }
 
