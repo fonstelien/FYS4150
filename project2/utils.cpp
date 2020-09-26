@@ -4,7 +4,10 @@ using namespace arma;
 using namespace std;
 
 /* Helper function for generating tridiagonal symmetric Toeplitz matrix of size n*n */
-mat tridiag_sym_toeplitz(int n, double center_element, double off_element) {
+mat tridiag_sym_toeplitz(int n) {
+  double h = 1./n;
+  double center_element = 2/(h*h);
+  double off_element = -1/(h*h);
   mat A = zeros<mat>(n,n);
   A.diag(0) = zeros<rowvec>(n) + center_element;
   A.diag(1) = zeros<rowvec>(n-1) + off_element;
@@ -13,6 +16,20 @@ mat tridiag_sym_toeplitz(int n, double center_element, double off_element) {
   return A;
 }
 
+/* Helper function for generating general tridiagonal symmetric matrix of size n*n */
+mat tridiag_sym_general(int n, double rho_max) {
+  double h = rho_max/n;
+  double off_element = -1/(h*h);
+  mat A = zeros<mat>(n,n);
+
+  for (int i = 0; i < n; i++)
+    A(i,i) = 2/(h*h) + (i*h)*(i*h);
+
+  A.diag(1) = zeros<rowvec>(n-1) + off_element;
+  A.diag(-1) = zeros<rowvec>(n-1) + off_element;
+
+  return A;
+}
 
 /* Finds the max fabs value along the off-diagonals in a symmetric matrix */
 /* A and stores the position in *k, *l. Searches the lower diagonals. */
@@ -104,7 +121,7 @@ void sort_eigen(vec &eigenvals, mat &eigenvecs) {
   i = j = 1;
   while (i < n) {
     j = i;
-    while (j > 0 && eigenvals[j-1] < eigenvals[j]) {
+    while (j > 0 && eigenvals[j] < eigenvals[j-1]) {
       // swap vals
       tmp_val = eigenvals[j-1];
       eigenvals[j-1] = eigenvals[j];

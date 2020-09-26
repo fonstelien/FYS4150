@@ -25,4 +25,3 @@ mat tridiag_sym_toeplitz_exact_eigenvecs(mat A) {
 
   return eigenvecs;
 }
-

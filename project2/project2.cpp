@@ -1,32 +1,62 @@
+#include <fstream>
+#include <unistd.h>
+#include <time.h>
 #include "utils.hpp"
 
-#define TOL 1.E-9
+#define TOL 1.E-3
 
 using namespace arma;
 using namespace std;
 
 /* From utils.cpp */
-mat tridiag_sym_toeplitz(int n, double center_element, double off_element);
-double max_off_diag_value(mat A, int *k, int *l);
-vec jacobi_solver(mat A, mat &S, double tolerance);
-void sort_eigen(vec &eigenvals, mat &eigenvecs);
 
 
-int main() {
-  int n = 10;
-  mat A = tridiag_sym_toeplitz(n, 2, -1);
-  mat S(n, n, fill::eye);
-  vec eigenvals;
+int main(int argc, const char **argv) {
+  vec eigenvals_numerical, eigenvals_exact;
+  mat A, S;
+  double rho_max, eps;
+  int n;
+  float multiplier = 0;
+  ofstream out_file;
+  clock_t start_t, end_t;
+  double lapsed_time;
   
-  eigenvals = jacobi_solver(A, S, TOL);
+  /* Parsing args */
+  rho_max = strtod(argv[1], NULL);  
+  n = atoi(argv[2]);
+  multiplier = strtod(argv[3], NULL);
+  out_file.open(argv[4]);
 
-  cout << eigenvals << endl;
-  cout << S << endl;
+  
+  eigenvals_exact = vec(n);
+  eigenvals_exact[0] = 3.;
+  for (int i = 1; i < n; i++)
+    eigenvals_exact[i] = eigenvals_exact[i-1] + 4.;
 
-  sort_eigen(eigenvals, S);
+  eps = TOL + 1;
+  for (; eps > TOL; n *= multiplier) {
+    A = tridiag_sym_general(n, rho_max);
+    S.eye(n,n);
 
-  cout << eigenvals << endl;
-  cout << S << endl;
+    start_t = clock();
+    eigenvals_numerical = jacobi_solver(A, S, 1.E-3);
+    end_t = clock();
+    
+    sort_eigen(eigenvals_numerical, S);
+    eps = fabs((eigenvals_exact[0] - eigenvals_numerical[0])/eigenvals_exact[0]);
+
+    lapsed_time = (double) (end_t - start_t) / CLOCKS_PER_SEC;
+    cout << "n, secs, eps: " << n << ", " << lapsed_time << ", " << eps << endl;
+  }
+  
+  for (int i = 0; i < (3 < n ? 3 : n); i++)
+    cout << eigenvals_numerical[i] << " " << eigenvals_exact[i] << endl;
+
+  out_file << n << endl;
+  out_file << eigenvals_numerical;
+  out_file << S << endl;
+  out_file.close();
+
   
   return 0;
 }

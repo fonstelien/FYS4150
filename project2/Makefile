@@ -9,8 +9,6 @@ else
 OPTIMIZEFLAGS := -O3
 endif
 
-debug := 1
-
 ifdef debug
 DEBUGFLAGS := -g
 OPTIMIZEFLAGS := -O0

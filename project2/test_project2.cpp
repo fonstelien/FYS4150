@@ -8,17 +8,12 @@ using namespace std;
 #define TOL 1.E-6
 
 /* From test_utils.cpp */
-vec tridiag_sym_toeplitz_exact_eigenvals(mat A);
-mat tridiag_sym_toeplitz_exact_eigenvecs(mat A);
 
 /* From utils.cpp */
-mat tridiag_sym_toeplitz(int n, double center_element, double off_element);
-double max_off_diag_value(mat A, int *k, int *l);
-vec jacobi_solver(mat A, mat &S, double tolerance);
-void sort_eigen(vec &eigenvals, mat &eigenvecs);
 
 
-TEST_CASE("Sym. tridiag. max value on off-diagonal", "[sym-tri-max]") {
+
+TEST_CASE("Max value on off-diagonal", "[max-off-diag]") {
   double set_val, max_val;
   int i,j,k,l;
   int n = 10;
@@ -44,15 +39,15 @@ TEST_CASE("Sym. tridiag. max value on off-diagonal", "[sym-tri-max]") {
 }
 
 
-
-
-TEST_CASE("Sym. tridiag. Toeplitz eigen", "[sym-tri-toeplitz-eigen]") {
+TEST_CASE("Toeplitz tridiag eigen pairs", "[toeplitz-eigen-pairs]") {
   vec eigenvals_numerical, eigenvals_exact;
   mat eigenvecs_numerical, eigenvecs_exact;
-  int n = 100;
-  mat A = tridiag_sym_toeplitz(n, 2., -1.);
-  mat S(n, n, fill::eye);
-  mat U, V;
+  int n;
+  mat A, S, U, V;
+
+  n = 10;
+  A = tridiag_sym_toeplitz(n);
+  S.eye(n,n);
   
   // eig_sym(eigenvals_numerical, eigenvecs_numerical, A);
   eigenvals_exact = tridiag_sym_toeplitz_exact_eigenvals(A);
@@ -81,4 +76,29 @@ TEST_CASE("Sym. tridiag. Toeplitz eigen", "[sym-tri-toeplitz-eigen]") {
     }
   }
 }
+
+
+// TEST_CASE("General tridiag eigen pairs", "[general-eigen-pairs]") {
+//   vec eigenvals_numerical, eigenvals_exact;
+//   int n;
+//   mat A, S;
+
+//   n = 100;
+//   A = tridiag_sym_general(n, 100.);
+//   S.eye(n,n);
+  
+//   eigenvals_exact = vec(n);
+//   eigenvals_exact[0] = 3.;
+//   for (int i = 1; i < n; i++)
+//     eigenvals_exact[i] = eigenvals_exact[i-1] + 4.;
+
+//   eigenvals_numerical = jacobi_solver(A, S, 1.E-12);
+//   sort_eigen(eigenvals_numerical, S);
+
+//   for (int i = 0; i < 4; i++)
+//     cout << eigenvals_numerical[i] << " " << eigenvals_exact[i] << endl;
+
+//   for (int i = 0; i < n; i++)
+//     REQUIRE(eigenvals_numerical[i] == Approx(eigenvals_exact[i]).epsilon(1.E-4));
+// }
 
