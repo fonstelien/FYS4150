@@ -58,11 +58,7 @@ TEST_CASE("Toeplitz tridiag eigen pairs", "[toeplitz-eigen-pairs]") {
   eigenvals_numerical = jacobi_solver(A, S, 1.E-9);
   sort_eigen(eigenvals_numerical, S);
   U = S * V;
-  
-  // cout << S << endl;
-  // cout << V << endl;
-  // cout << U << endl;
-  
+    
   for (int i = 0; i < n; i++)
     REQUIRE(eigenvals_numerical[i] == Approx(eigenvals_exact[i]).epsilon(TOL));
 
@@ -76,6 +72,29 @@ TEST_CASE("Toeplitz tridiag eigen pairs", "[toeplitz-eigen-pairs]") {
     }
   }
 }
+
+
+
+TEST_CASE("Bisection", "[bisection-eigenvals]") {
+  vec eigenvals_numerical, eigenvals_exact;
+  int n;
+  mat A;
+
+  for (n = 10; n < 1000; n += 10) {
+    A = tridiag_sym_toeplitz(n);
+    cout << "n=" << n << endl;
+  
+    eigenvals_exact = tridiag_sym_toeplitz_exact_eigenvals(A);
+    sort_eigen(eigenvals_exact, A);
+
+    eigenvals_numerical = quick_solver(n, 1.);
+    sort_eigen(eigenvals_numerical, A);
+  
+    for (int i = 0; i < n; i++)
+      REQUIRE(eigenvals_numerical[i] == Approx(eigenvals_exact[i]).epsilon(TOL));
+  }
+}
+
 
 
 // TEST_CASE("General tridiag eigen pairs", "[general-eigen-pairs]") {

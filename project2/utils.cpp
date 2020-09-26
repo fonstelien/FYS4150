@@ -126,6 +126,7 @@ void sort_eigen(vec &eigenvals, mat &eigenvecs) {
       tmp_val = eigenvals[j-1];
       eigenvals[j-1] = eigenvals[j];
       eigenvals[j] = tmp_val;
+
       // swap vecs
       tmp_vec = eigenvecs.col(j-1);
       eigenvecs.col(j-1) = eigenvecs.col(j);
@@ -134,4 +135,88 @@ void sort_eigen(vec &eigenvals, mat &eigenvecs) {
     }
     i++;
   }
+}
+
+class P {
+  double d;
+  double c;
+
+public:
+  void init(double center_const, double off_const) {
+    d = center_const;
+    c = off_const;
+  }
+
+  double operator()(int k, double x) {
+    int i;
+    double pk_2, pk_1, pk;  // k minus 2, k minus 1, k
+    
+    pk_2 = x - d;
+    if (k == 1)
+      return pk_2;
+    pk_1 = (x - d)*pk_2 - c*c;
+    if (k == 2)
+      return pk_1;
+
+    pk = 0.;
+    i = 2;
+    while (i++ < k) {
+      pk = (x - d)*pk_1 - c*c*pk_2;
+      pk_2 = pk_1;
+      pk_1 = pk;
+    }
+    
+    return pk;
+  }
+};
+
+
+double bisection_root_finder(P &pol, int k, double x_min, double x_max) {
+  int i = 0;
+  double x_left = x_min;
+  double x_right = x_max;
+  double x_mid;
+
+  while ((x_right-x_left)/(x_max-x_min) > BISECTION_ROOT_FINDER_EPS &&	\
+	 i++ < BISECTION_ROOT_FINDER_MAXITER) {
+    x_mid = (x_right + x_left) / 2;
+    if (pol(k, x_left)*pol(k, x_mid) < 0)
+      x_right = x_mid;
+    else
+      x_left = x_mid;
+  }
+
+  return x_left;
+}
+
+
+vec quick_solver(int n, double rho_max) {
+  double x_min, x_max, x_tmp;
+  double h = rho_max/n;
+  vec eigenvals(n);
+  P p;
+
+  double d = 2.;
+  double c = -1.;
+
+  p.init(d, c);  
+
+  x_max = d;
+  x_min = 0.;
+  eigenvals[0] = bisection_root_finder(p, 1, x_min, x_max);
+  for (int k = 2; k < n+1; k++) {
+    x_min = 0.;
+    int i = 0;
+    while (i < k-1) {
+      x_max = eigenvals[i];
+      eigenvals[i] = bisection_root_finder(p, k, x_min, x_max);
+      x_min = x_max;
+      i++;
+    }
+    x_min = x_max;
+    x_max = d + fabs(2*c);
+    eigenvals[i] = bisection_root_finder(p, k, x_min, x_max);
+  }
+  
+  return eigenvals/(h*h);
 }
