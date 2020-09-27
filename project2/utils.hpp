@@ -5,7 +5,7 @@
 #define DEBUG(msg) cout << "DEBUG " << msg << endl;
 
 #define BISECTION_ROOT_FINDER_MAXITER 50
-#define BISECTION_ROOT_FINDER_EPS 1.E-3
+#define BISECTION_ROOT_FINDER_EPS 1.E-6
 
 using namespace arma;
 using namespace std;

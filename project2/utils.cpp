@@ -16,7 +16,8 @@ mat make_tridiag_sym_toeplitz(int n) {
   return A;
 }
 
-/* Helper function for generating general tridiagonal symmetric matrix of size n*n */
+/* Helper function for generating general tridiagonal symmetric matrix of size n*n, */
+/* With constant values along the off-diagonals and row-dependent value along the central. */
 mat make_tridiag_sym_general(int n, double rho_max) {
   double h = rho_max/n;
   double off_element = -1/(h*h);
@@ -31,9 +32,9 @@ mat make_tridiag_sym_general(int n, double rho_max) {
   return A;
 }
 
-/* Finds the max fabs value along the off-diagonals in a symmetric matrix */
-/* A and stores the position in *k, *l. Searches the lower diagonals. */
-/* Returns fabs of max value. */
+/* Finds the max fabs() value along the off-diagonals in a symmetric matrix */
+/* A and stores the position in *k, *l. Searches only the lower diagonals. */
+/* Returns fabs() of max value. */
 double max_off_diag_value(mat A, int *k, int *l) {
   int n = A.n_rows;
   double max_val, new_max;
@@ -53,7 +54,8 @@ double max_off_diag_value(mat A, int *k, int *l) {
   return max_val;
 }
 
-/* Finds and returns mat A's eigenvalues. The rotations are stored in mat S. */
+/* Finds and returns mat A's eigenvalues by the Jacobi method. */
+/* The rotations are stored in mat S. */
 vec jacobi_solver(mat A, mat &S, double tolerance) {
   double a_ik, a_il, a_kk, a_kl, a_ll;
   double s_ki, s_li;
@@ -138,6 +140,7 @@ void sort_eigen_pairs(vec &eigenvals, mat &eigenvecs) {
 }
 
 
+/* Abstract class */
 class Polynomial {
 protected:
   double h2;
@@ -150,11 +153,13 @@ public:
 };
 
 
+/* Class for solving the eigenvalue problem by expanding the polynomial */
+/* P2(x) = (d-x)*P1(x) - e^2*P0(x) */
 class P: public Polynomial {
 public:
-  void init(double diag_element, double off_element) {
-    d = diag_element;
-    e = off_element;
+  void init(double d0, double e0) {
+    d = d0;
+    e = e0;
   }
 
   double operator()(int k, double x) {
@@ -180,26 +185,33 @@ public:
   }
 };
 
+
+/* Class for solving the eigenvalue problem by expanding the polynomial */
+/* Q2(x) = (d-x) - e^2/Q1(x) */
 class Q: public Polynomial {
+  double di(int i) {
+    return d + i*i*h2;
+  }
+  
 public:
-  void init(double diag_element, double off_element, double h) {
+  void init(double d0, double e0, double h) {
     h2 = h*h;
-    d = diag_element;
-    e = off_element;
+    d = d0;
+    e = e0;
   }
 
   double operator()(int k, double x) {
     int i;
     double qk_1, qk;  // k minus 1, k
-    
-    qk_1 = (d + h2) - x;
-    if (k == 1)
-      return qk_1;
 
-    qk = 0.;
     i = 1;
+    qk = di(i) - x;
+    if (k == 1)
+      return qk;
+
+    qk_1 = qk;
     while (i++ < k) {
-      qk = ((d + i*i*h2) - x) - e*e/qk_1;
+      qk = (di(i) - x) - e*e/qk_1;
       qk_1 = qk;
     }
     
@@ -208,17 +220,23 @@ public:
 };
 
 
+/* Finds the root of Pk(x) in the range [x_min, x_max] by the bisection method. */
 double bisection_root_finder(Polynomial &p, int k, double x_min, double x_max) {
   int i = 0;
   double x_left = x_min;
   double x_right = x_max;
   double x_mid;
-
-  while ((x_right-x_left) > BISECTION_ROOT_FINDER_EPS &&	\
+  double p_mid;
+  
+  while ((x_right-x_left)/(x_max-x_min) > BISECTION_ROOT_FINDER_EPS &&	\
 	 i++ < BISECTION_ROOT_FINDER_MAXITER) {
-
     x_mid = (x_right + x_left) / 2;
-    if (p(k, x_left)*p(k, x_mid) < 0)
+    p_mid = p(k, x_mid);
+    
+    if (p_mid == 0)
+      return x_mid;
+
+    if (p(k, x_left)*p_mid < 0)
       x_right = x_mid;
     else
       x_left = x_mid;
@@ -228,24 +246,27 @@ double bisection_root_finder(Polynomial &p, int k, double x_min, double x_max) {
 }
 
 
+/* Quick solver for tridiagonal symmetrical Toeplitz matrix. Finds the roots by polynomial */
+/* expansion and bisection root search. */
 vec quick_solver_tridiag_sym_toeplitz(int n) {
-  double x_min, x_max, x_tmp;
+  double x_min, x_max;
   vec eigenvals(n);
   double h = 1./n;
   double d = 2.;
   double e = -1.;
 
+  /* P2(x) = (d-x)*P1(x) - e^2*P0(x) */  
   P p;
   p.init(d, e);
 
-  x_max = d;
-  x_min = 0.;
-  eigenvals[0] = bisection_root_finder(p, 1, x_min, x_max);
-  for (int k = 2; k < n+1; k++) {
+  /* Finding roots by polynomial expansion */  
+  eigenvals[0] = d - sqrt(-e);  // roots for k=2
+  eigenvals[1] = d + sqrt(-e);
+  for (int k = 3; k < n+1; k++) {
     x_min = 0.;
     int i = 0;
     while (i < k-1) {
-      x_max = eigenvals[i];
+      x_max = eigenvals[i];      
       eigenvals[i] = bisection_root_finder(p, k, x_min, x_max);
       x_min = x_max;
       i++;
@@ -254,25 +275,27 @@ vec quick_solver_tridiag_sym_toeplitz(int n) {
     x_max = d + fabs(2*e);
     eigenvals[i] = bisection_root_finder(p, k, x_min, x_max);
   }
-  
+
   return eigenvals/(h*h);
 }
 
 
+/* Quick solver for tridiagonal symmetrical Toeplitz matrix. Finds the roots by polynomial */
+/* expansion and bisection root search. */
 vec quick_solver_tridiag_sym_general(int n, double rho_max) {
-  double x_min, x_max, x_tmp;
+  double x_min, x_max;
   vec eigenvals(n);
   double h = rho_max/n;
   double h2 = h*h;
   double d = 2./h2;
   double e = -1./h2;
-  Q q;
 
+  /* Q2(x) = (d-x) - e^2/Q1(x) */
+  Q q;
   q.init(d, e, h);
-  
-  x_max = d + h2;
-  x_min = 0.;
-  eigenvals[0] = bisection_root_finder(q, 1, x_min, x_max);
+
+  /* Finding roots by polynomial expansion */  
+  eigenvals[0] = d + h2;  // root for k=1
   for (int k = 2; k < n+1; k++) {
     x_min = 0.;
     int i = 0;

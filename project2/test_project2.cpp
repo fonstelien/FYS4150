@@ -77,7 +77,7 @@ TEST_CASE("Quick Toeplitz", "[quick-toeplitz]") {
   int n;
   mat A;
 
-  n = 10;
+  n = 100;
   A = make_tridiag_sym_toeplitz(n);
   eigenvals_exact = tridiag_sym_toeplitz_exact_eigenvals(A);
   sort_eigen_pairs(eigenvals_exact, A);
@@ -85,7 +85,7 @@ TEST_CASE("Quick Toeplitz", "[quick-toeplitz]") {
   eigenvals_numerical = quick_solver_tridiag_sym_toeplitz(n);
   
   for (int i = 0; i < n; i++)
-    REQUIRE(eigenvals_numerical[i] == Approx(eigenvals_exact[i]).epsilon(1.E-4));
+    REQUIRE(eigenvals_numerical[i] == Approx(eigenvals_exact[i]).epsilon(1.E-6));
 }
 
 TEST_CASE("Quick general", "[quick-general]") {
@@ -106,30 +106,3 @@ TEST_CASE("Quick general", "[quick-general]") {
   for (int i = 0; i < 3; i++)
     REQUIRE(eigenvals_numerical[i] == Approx(eigenvals_exact[i]).epsilon(1.E-2));
 }
-
-
-
-// TEST_CASE("General tridiag eigen pairs", "[general-eigen-pairs]") {
-//   vec eigenvals_numerical, eigenvals_exact;
-//   int n;
-//   mat A, S;
-
-//   n = 100;
-//   A = tridiag_sym_general(n, 100.);
-//   S.eye(n,n);
-  
-//   eigenvals_exact = vec(n);
-//   eigenvals_exact[0] = 3.;
-//   for (int i = 1; i < n; i++)
-//     eigenvals_exact[i] = eigenvals_exact[i-1] + 4.;
-
-//   eigenvals_numerical = jacobi_solver(A, S, 1.E-12);
-//   sort_eigen(eigenvals_numerical, S);
-
-//   for (int i = 0; i < 4; i++)
-//     cout << eigenvals_numerical[i] << " " << eigenvals_exact[i] << endl;
-
-//   for (int i = 0; i < n; i++)
-//     REQUIRE(eigenvals_numerical[i] == Approx(eigenvals_exact[i]).epsilon(1.E-4));
-// }
-
