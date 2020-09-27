@@ -1,4 +1,3 @@
-#define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 #include "test_utils.hpp"
 
@@ -46,17 +45,17 @@ TEST_CASE("Toeplitz tridiag eigen pairs", "[toeplitz-eigen-pairs]") {
   mat A, S, U, V;
 
   n = 10;
-  A = tridiag_sym_toeplitz(n);
+  A = make_tridiag_sym_toeplitz(n);
   S.eye(n,n);
   
   // eig_sym(eigenvals_numerical, eigenvecs_numerical, A);
   eigenvals_exact = tridiag_sym_toeplitz_exact_eigenvals(A);
   eigenvecs_exact = tridiag_sym_toeplitz_exact_eigenvecs(A);
-  sort_eigen(eigenvals_exact, eigenvecs_exact);
+  sort_eigen_pairs(eigenvals_exact, eigenvecs_exact);
   V = eigenvecs_exact;
 
   eigenvals_numerical = jacobi_solver(A, S, 1.E-9);
-  sort_eigen(eigenvals_numerical, S);
+  sort_eigen_pairs(eigenvals_numerical, S);
   U = S * V;
     
   for (int i = 0; i < n; i++)
@@ -73,26 +72,39 @@ TEST_CASE("Toeplitz tridiag eigen pairs", "[toeplitz-eigen-pairs]") {
   }
 }
 
-
-
-TEST_CASE("Bisection", "[bisection-eigenvals]") {
+TEST_CASE("Quick Toeplitz", "[quick-toeplitz]") {
   vec eigenvals_numerical, eigenvals_exact;
   int n;
   mat A;
 
-  for (n = 10; n < 1000; n += 10) {
-    A = tridiag_sym_toeplitz(n);
-    cout << "n=" << n << endl;
-  
-    eigenvals_exact = tridiag_sym_toeplitz_exact_eigenvals(A);
-    sort_eigen(eigenvals_exact, A);
+  n = 10;
+  A = make_tridiag_sym_toeplitz(n);
+  eigenvals_exact = tridiag_sym_toeplitz_exact_eigenvals(A);
+  sort_eigen_pairs(eigenvals_exact, A);
 
-    eigenvals_numerical = quick_solver(n, 1.);
-    sort_eigen(eigenvals_numerical, A);
+  eigenvals_numerical = quick_solver_tridiag_sym_toeplitz(n);
   
-    for (int i = 0; i < n; i++)
-      REQUIRE(eigenvals_numerical[i] == Approx(eigenvals_exact[i]).epsilon(TOL));
-  }
+  for (int i = 0; i < n; i++)
+    REQUIRE(eigenvals_numerical[i] == Approx(eigenvals_exact[i]).epsilon(1.E-4));
+}
+
+TEST_CASE("Quick general", "[quick-general]") {
+  vec eigenvals_numerical, eigenvals_exact;
+  int n;
+  mat A;
+  double rho_max;
+  
+  n = 500;
+  eigenvals_exact = vec(3);  
+  eigenvals_exact[0] = 3.;
+  for (int i = 1; i < 3; i++)
+    eigenvals_exact[i] = eigenvals_exact[i-1] + 4.;
+
+  rho_max = 4.;
+  eigenvals_numerical = quick_solver_tridiag_sym_general(n, rho_max);
+  
+  for (int i = 0; i < 3; i++)
+    REQUIRE(eigenvals_numerical[i] == Approx(eigenvals_exact[i]).epsilon(1.E-2));
 }
 
 

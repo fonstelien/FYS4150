@@ -57,17 +57,21 @@ int main(int argc, const char **argv) {
   // out_file << S << endl;
   // out_file.close();
   
-  vec eigenvals = tridiag_sym_solver(3, 1.);
-  cout << eigenvals << endl;
+  vec eigenvals = quick_solver_tridiag_sym_general(500, 4.);
+  cout << eigenvals[0] << " " << eigenvals[1] << " " << eigenvals[2] << " ";
+  cout << eigenvals[3] << " " << eigenvals[4] << " " << eigenvals[5]<< endl;
 
-  eigenvals = tridiag_sym_solver(2, 1.);
-  cout << eigenvals << endl;
 
-  eigenvals = tridiag_sym_solver(3, 1.);
-  cout << eigenvals << endl;
 
-  eigenvals = tridiag_sym_solver(4, 1.);
-  cout << eigenvals << endl;
+  
+  // eigenvals = quick_tridiag_sym_general(2, 1.);
+  // cout << eigenvals << endl;
+
+  // eigenvals = quick_tridiag_sym_general(3, 1.);
+  // cout << eigenvals << endl;
+
+  // eigenvals = quick_tridiag_sym_general(4, 1.);
+  // cout << eigenvals << endl;
   
   return 0;
 }

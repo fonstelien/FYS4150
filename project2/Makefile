@@ -1,7 +1,7 @@
 CC := g++ -std=c++11
 BIN := project2 test_project2
 OBJ := utils.o
-TEST_OBJ := $(OBJ) test_utils.o
+TEST_OBJ := $(OBJ) test_utils.o test_define.o
 
 ifdef optimize
 OPTIMIZEFLAGS := $(optimize)
@@ -24,7 +24,7 @@ CCFLAGS := -Wall -Wextra $(LIBS) $(OPTIMIZEFLAGS) $(DEBUGFLAGS)
 
 all: project2 test_project2
 
-project2: project2.cpp $(TEST_OBJ)
+project2: project2.cpp $(OBJ)
 	$(CC) $^ -o $@ $(CCFLAGS)
 
 test_project2: test_project2.cpp $(TEST_OBJ)

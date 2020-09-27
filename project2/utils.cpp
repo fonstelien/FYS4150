@@ -4,7 +4,7 @@ using namespace arma;
 using namespace std;
 
 /* Helper function for generating tridiagonal symmetric Toeplitz matrix of size n*n */
-mat tridiag_sym_toeplitz(int n) {
+mat make_tridiag_sym_toeplitz(int n) {
   double h = 1./n;
   double center_element = 2/(h*h);
   double off_element = -1/(h*h);
@@ -17,7 +17,7 @@ mat tridiag_sym_toeplitz(int n) {
 }
 
 /* Helper function for generating general tridiagonal symmetric matrix of size n*n */
-mat tridiag_sym_general(int n, double rho_max) {
+mat make_tridiag_sym_general(int n, double rho_max) {
   double h = rho_max/n;
   double off_element = -1/(h*h);
   mat A = zeros<mat>(n,n);
@@ -111,7 +111,7 @@ vec jacobi_solver(mat A, mat &S, double tolerance) {
 
 
 /* Sorts eigenpairs in ascending order with respect to eigenvalues */
-void sort_eigen(vec &eigenvals, mat &eigenvecs) {
+void sort_eigen_pairs(vec &eigenvals, mat &eigenvecs) {
   vec tmp_vec;
   double tmp_val;
   int n = eigenvecs.n_cols;
@@ -137,31 +137,41 @@ void sort_eigen(vec &eigenvals, mat &eigenvecs) {
   }
 }
 
-class P {
+
+class Polynomial {
+protected:
+  double h2;
   double d;
-  double c;
+  double e;
 
 public:
-  void init(double center_const, double off_const) {
-    d = center_const;
-    c = off_const;
+  virtual void init() {;}
+  virtual double operator()(int k, double x) = 0;
+};
+
+
+class P: public Polynomial {
+public:
+  void init(double diag_element, double off_element) {
+    d = diag_element;
+    e = off_element;
   }
 
   double operator()(int k, double x) {
     int i;
     double pk_2, pk_1, pk;  // k minus 2, k minus 1, k
     
-    pk_2 = x - d;
+    pk_2 = d - x;
     if (k == 1)
       return pk_2;
-    pk_1 = (x - d)*pk_2 - c*c;
+    pk_1 = (d - x)*pk_2 - e*e;
     if (k == 2)
       return pk_1;
 
     pk = 0.;
     i = 2;
     while (i++ < k) {
-      pk = (x - d)*pk_1 - c*c*pk_2;
+      pk = (d - x)*pk_1 - e*e*pk_2;
       pk_2 = pk_1;
       pk_1 = pk;
     }
@@ -170,36 +180,63 @@ public:
   }
 };
 
+class Q: public Polynomial {
+public:
+  void init(double diag_element, double off_element, double h) {
+    h2 = h*h;
+    d = diag_element;
+    e = off_element;
+  }
 
-double bisection_root_finder(P &pol, int k, double x_min, double x_max) {
+  double operator()(int k, double x) {
+    int i;
+    double qk_1, qk;  // k minus 1, k
+    
+    qk_1 = (d + h2) - x;
+    if (k == 1)
+      return qk_1;
+
+    qk = 0.;
+    i = 1;
+    while (i++ < k) {
+      qk = ((d + i*i*h2) - x) - e*e/qk_1;
+      qk_1 = qk;
+    }
+    
+    return qk;
+  }
+};
+
+
+double bisection_root_finder(Polynomial &p, int k, double x_min, double x_max) {
   int i = 0;
   double x_left = x_min;
   double x_right = x_max;
   double x_mid;
 
-  while ((x_right-x_left)/(x_max-x_min) > BISECTION_ROOT_FINDER_EPS &&	\
+  while ((x_right-x_left) > BISECTION_ROOT_FINDER_EPS &&	\
 	 i++ < BISECTION_ROOT_FINDER_MAXITER) {
+
     x_mid = (x_right + x_left) / 2;
-    if (pol(k, x_left)*pol(k, x_mid) < 0)
+    if (p(k, x_left)*p(k, x_mid) < 0)
       x_right = x_mid;
     else
       x_left = x_mid;
   }
 
-  return x_left;
+  return x_right;
 }
 
 
-vec quick_solver(int n, double rho_max) {
+vec quick_solver_tridiag_sym_toeplitz(int n) {
   double x_min, x_max, x_tmp;
-  double h = rho_max/n;
   vec eigenvals(n);
-  P p;
-
+  double h = 1./n;
   double d = 2.;
-  double c = -1.;
+  double e = -1.;
 
-  p.init(d, c);  
+  P p;
+  p.init(d, e);
 
   x_max = d;
   x_min = 0.;
@@ -214,9 +251,41 @@ vec quick_solver(int n, double rho_max) {
       i++;
     }
     x_min = x_max;
-    x_max = d + fabs(2*c);
+    x_max = d + fabs(2*e);
     eigenvals[i] = bisection_root_finder(p, k, x_min, x_max);
   }
   
   return eigenvals/(h*h);
+}
+
+
+vec quick_solver_tridiag_sym_general(int n, double rho_max) {
+  double x_min, x_max, x_tmp;
+  vec eigenvals(n);
+  double h = rho_max/n;
+  double h2 = h*h;
+  double d = 2./h2;
+  double e = -1./h2;
+  Q q;
+
+  q.init(d, e, h);
+  
+  x_max = d + h2;
+  x_min = 0.;
+  eigenvals[0] = bisection_root_finder(q, 1, x_min, x_max);
+  for (int k = 2; k < n+1; k++) {
+    x_min = 0.;
+    int i = 0;
+    while (i < k-1) {
+      x_max = eigenvals[i];
+      eigenvals[i] = bisection_root_finder(q, k, x_min, x_max);
+      x_min = x_max;
+      i++;
+    }
+    x_min = x_max;
+    x_max = (d + k*k*h2) + fabs(2*e);
+    eigenvals[i] = bisection_root_finder(q, k, x_min, x_max);
+  }
+  
+  return eigenvals;
 }
