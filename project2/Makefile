@@ -1,7 +1,7 @@
 CC := g++ -std=c++11
 BIN := project2 test_project2
 OBJ := utils.o jacobi.o polynomial_expansion.o
-TEST_OBJ := $(OBJ) test_utils.o test_define.o
+TEST_OBJ := $(OBJ) test_define.o
 
 ifdef optimize
 OPTIMIZEFLAGS := $(optimize)
@@ -30,7 +30,7 @@ project2: project2.cpp $(OBJ)
 test_project2: test_project2.cpp $(TEST_OBJ)
 	$(CC) $^ -o $@ $(CCFLAGS)
 
-%.o: %.cpp utils.hpp test_utils.hpp
+%.o: %.cpp utils.hpp
 	$(CC) -c $< -o $@ $(CCFLAGS) 
 
 clean:

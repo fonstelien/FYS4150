@@ -60,7 +60,7 @@ double max_off_diag_value(mat A, int *k, int *l) {
 
 /* Finds and returns mat A's eigenvalues by the Jacobi method. */
 /* The rotations are stored in mat S. */
-vec jacobi_solver(mat A, mat &S, double tolerance) {
+vec jacobi_solver(mat A, mat &S, int *rotations, double tolerance) {
   double a_ik, a_il, a_kk, a_kl, a_ll;
   double s_ki, s_li;
   double tau, t, s, c;  // t=tan(theta), s=sin(theta), c=cos(theta)
@@ -69,7 +69,10 @@ vec jacobi_solver(mat A, mat &S, double tolerance) {
   vec eigenvals(n);
 
   /* Rotating */
-  while (max_off_diag_value(A, &k, &l) > tolerance) {  
+  *rotations = 0;
+  while (max_off_diag_value(A, &k, &l) > tolerance) {
+    *rotations += 1;
+    
     /* Finding the right rotation */
     a_kk = A(k,k);
     a_kl = A(k,l);

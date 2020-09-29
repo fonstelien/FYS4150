@@ -3,75 +3,146 @@
 #include <time.h>
 #include "utils.hpp"
 
-#define TOL 1.E-3
+/* Defaults */
+#define EPS 1.E-6  // tolerance
+#define DIMENSION 10  // matrix dimension
+
+/* Modes */
+#define COMPARE 1
+#define ITERATIONS 2
+#define TIME 3
+
+/* Algorithms */
+#define JACOBI 1
+#define POLY_EXP 2
+
+/* Toeplitz or general matrix */
+#define TOEPLITZ 1
+#define GENERAL 2
+
 
 using namespace arma;
 using namespace std;
 
+
+/* Prints program usage */
+void print_usage() {
+  cout << "usage: project1 [-h | -c | -t] [-jpe] n" << endl;
+  cout << "  -h   print this text" << endl;
+}
+
+
 /* From utils.cpp */
 
 
-int main(int argc, const char **argv) {
-  vec eigenvals_numerical, eigenvals_exact;
+int main(int argc, char **argv) {
+  vec eigenvals_numeric, eigenvals_exact;
   mat A, S;
-  double rho_max, eps;
-  int n;
+  int n = DIMENSION;
+  float h;
   float multiplier = 0;
   ofstream out_file;
   clock_t start_t, end_t;
   double lapsed_time;
+  int opt;
+  int mode = -1;
+  int algorithm = -1;
+  int matrix = -1;
+  double rho_max = 1.;
+  double eps = EPS;
+  int iterations;
   
-  // /* Parsing args */
-  // rho_max = strtod(argv[1], NULL);  
-  // n = atoi(argv[2]);
-  // multiplier = strtod(argv[3], NULL);
-  // out_file.open(argv[4]);
+  // Parsing args
+  if (argc < 2) {
+    cerr << "error: missing arguments" << endl;
+    print_usage();
+    exit(1);
+   }
 
+  opterr = 0;
+  while ((opt = getopt(argc, argv, "hn:cjtgie:")) != -1) {
+    switch (opt) {
+    case 'h':
+      print_usage();
+      exit(0);
+    case 'n':
+      n = atoi(optarg);
+      continue;
+    case 'c':
+      mode = COMPARE;
+      continue;
+    case 'i':
+      mode = ITERATIONS;
+      continue;
+    case 'j':
+      algorithm = JACOBI;
+      continue;
+    case 't':
+      matrix = TOEPLITZ;
+      continue;
+    case 'g':
+      matrix = GENERAL;
+      continue;
+    case 'e':
+      eps = strtod(optarg, NULL);
+      continue;
+    default:
+      cerr << "error: unknown option: " << (char) optopt << endl;
+      print_usage();
+      exit(1);
+    }
+  }
   
-  // eigenvals_exact = vec(n);
-  // eigenvals_exact[0] = 3.;
-  // for (int i = 1; i < n; i++)
-  //   eigenvals_exact[i] = eigenvals_exact[i-1] + 4.;
+  h = rho_max/n;
 
-  // eps = TOL + 1;
-  // for (; eps > TOL; n *= multiplier) {
-  //   A = tridiag_sym_general(n, rho_max);
-  //   S.eye(n,n);
+  /* Running algorithms */
+  switch (algorithm) {
+  case JACOBI:
+    if (matrix == TOEPLITZ)
+      A = make_tridiag_sym_toeplitz(n);
+    else if (matrix == GENERAL)
+      A = make_tridiag_sym_general(n, rho_max);
+    S.eye(n,n);
+    eigenvals_numeric = jacobi_solver(A, S, &iterations, eps);
+    sort_eigen_pairs(eigenvals_numeric, S);
+    break;
 
-  //   start_t = clock();
-  //   eigenvals_numerical = jacobi_solver(A, S, 1.E-3);
-  //   end_t = clock();
+  case POLY_EXP:
+    if (matrix == TOEPLITZ)
+      ;
+    else if (matrix == GENERAL)
+      ;
+    break;
     
-  //   sort_eigen(eigenvals_numerical, S);
-  //   eps = fabs((eigenvals_exact[0] - eigenvals_numerical[0])/eigenvals_exact[0]);
-
-  //   lapsed_time = (double) (end_t - start_t) / CLOCKS_PER_SEC;
-  //   cout << "n, secs, eps: " << n << ", " << lapsed_time << ", " << eps << endl;
-  // }
+  default:
+    break;
+  }
   
-  // for (int i = 0; i < (3 < n ? 3 : n); i++)
-  //   cout << eigenvals_numerical[i] << " " << eigenvals_exact[i] << endl;
+  if (mode == COMPARE) {
+    if (matrix == TOEPLITZ)
+      eigenvals_exact = tridiag_sym_toeplitz_exact_eigenvals(n);
+    else if (matrix == GENERAL)
+      eigenvals_exact = tridiag_sym_general_exact_eigenvals(n);
+    sort_eigenvals(eigenvals_exact);
+  }
 
-  // out_file << n << endl;
-  // out_file << eigenvals_numerical;
-  // out_file << S << endl;
-  // out_file.close();
-  
-  vec eigenvals = quick_solver_tridiag_sym_general(500, 4.);
-  cout << eigenvals[0] << " " << eigenvals[1] << " " << eigenvals[2] << " ";
-  cout << eigenvals[3] << " " << eigenvals[4] << " " << eigenvals[5]<< endl;
+  /* Print results */
+  switch (mode) {
+  case COMPARE:
+    cout.precision(12);
+    cout << scientific;
+    cout << "exact" << "," << "numeric" << endl;
+    for (int i = 0; i < n; i++)
+      cout << eigenvals_exact[i] << "," << eigenvals_numeric[i] << endl;
+    break;
 
+  case ITERATIONS:
+    cout << iterations << endl;
 
+  default:
+    break;
+  }
 
-  
-  // eigenvals = quick_tridiag_sym_general(2, 1.);
-  // cout << eigenvals << endl;
-
-  // eigenvals = quick_tridiag_sym_general(3, 1.);
-  // cout << eigenvals << endl;
-
-  // eigenvals = quick_tridiag_sym_general(4, 1.);
-  // cout << eigenvals << endl;
   
   return 0;
 }

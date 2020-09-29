@@ -47,18 +47,99 @@
 %-What I have done
 %-The structure of the report, how it is organized etc
 
-We will study the numerical solution of eigenvalue problems for second order differential equations 
-\[
-\frac{d^2 u(\rho)}{d\rho^2} = -\lambda u(\rho),
-\]
-and
-\[
--\frac{d^2}{d\rho^2} u(\rho) + \rho^2u(\rho)  = \lambda u(\rho).
-\]
-We will apply Dirichlet boundary conditions and.
-
 This work is my submission for the second project in the course FYS4150 given at University of Oslo, autumn 2020 \cite{fys4150},\cite{fys4150-p2}. I have implemented the algorithms in C++ using the Armadillo library. You will find the source code at my repository \url{https://github.com/fonstelien/FYS4150/tree/master/project2}.
 
+We will study two iterative algorithms for numerical solutions to eigenvalue problems $\mathbf{Au} = \lambda \mathbf{u}$ and apply them to second order differential equations with Dirichlet boundary conditions on the form
+\begin{equation}
+\label{diff_1}
+	\frac{d^2 u(\rho)}{d\rho^2} = -\lambda u(\rho),
+\end{equation}
+and
+\begin{equation}
+\label{diff_2}
+	-\frac{d^2}{d\rho^2} u(\rho) + \rho^2u(\rho)  = \lambda u(\rho).
+\end{equation}
+
+The first algorithm is the Jacobi eigenvalue algorithm, and the second is a solution based on iterative expansion of the characteristic polynomial $p(x) = \det(\mathbf{A} - x\mathbf{I})$. I will first introduce the theoretical background, then move over to presenting how the algorithms can be implemented, before 
+
+\subsection{Mathematical basis for the Jacobi eigenvalue method}
+Given the eigenvalue problem $\mathbf{Au} = \lambda \mathbf{u}$ where $\mathbf{A}$ is symmetrical. The Jacobi algorithm aims to diagonalize $\mathbf{A}$ by iterative application of pairwise \textit{Givens rotations}. $\mathbf{A}$ is rotated about an orthogonal matrix $\mathbf{S}$ and its transpose $\mathbf{S}^\intercal$ , such that 
+\[
+\mathbf{S}^\intercal \mathbf{A} = \lambda \mathbf{S}^\intercal \mathbf{u} \Rightarrow \mathbf{S}^\intercal \mathbf{A} \mathbf{S} (\mathbf{S}^\intercal \mathbf{u})= \lambda \mathbf{S}^\intercal \mathbf{u}.
+\]
+
+With $\mathbf{S} = \mathbf{S}_m \mathbf{S}_{m-1} \cdots \mathbf{S}_1$, the $\mathbf{S}_i$s will be chosen such that
+\[
+\mathbf{S}^\intercal \mathbf{A} \mathbf{S} = \mathbf{D}, 
+\]
+and hence
+\[
+\mathbf{D} (\mathbf{S}^\intercal \mathbf{u})= \lambda \mathbf{I} (\mathbf{S}^\intercal \mathbf{u}) \Rightarrow \mathbf{D}_{n \times n} = \mathrm{diag}(\lambda_1, \lambda_2, \ldots, \lambda_n).
+\]
+See \cite{fys4150-notes}. The \textit{Givens matrices} \cite{mat-inf4130} $\mathbf{S}_i$ are given by
+\begin{equation*}
+\mathbf{S}_i = \mathbf{S}_{kl}
+\begin{bmatrix}
+\mathbf{I}_k & \mathbf{0} & \mathbf{0} \\
+\mathbf{0} & \mathbf{G}_{l-k}(\theta) & \mathbf{0} \\
+\mathbf{0} & \mathbf{0} & \mathbf{I} \\
+\end{bmatrix}
+\text{, where }
+\mathbf{G}_{l-k}(\theta) = 
+\begin{bmatrix}
+\cos \theta 	& 0 		& \cdots 		& -\sin \theta \\
+0 				& 1 		& \ddots 		& 0 \\
+\vdots 			& \ddots	& \ddots 		& \vdots \\
+\sin \theta 	& 0 		& \cdots 		& \cos \theta \\
+\end{bmatrix} \in \mathbb{R}^{(l-k) \times (l-k)}.
+\end{equation*}
+
+After the first dual rotation, we obtain $\mathbf{S}_1^\intercal \mathbf{A} \mathbf{S}_1 = \mathbf{B}$, where $\mathbf{B}_i$ is symmetrical with elements
+\begin{equation}
+\label{b_elements}
+\begin{array}{cc}
+\left\{
+\begin{aligned}
+b_{jj} =& a_{jj} \\
+b_{jk} =& a_{jk}\cos\theta - a_{jl}\sin\theta \\
+b_{jl} =& a_{jl}\cos\theta + a_{jk}\sin\theta \\
+b_{kk} =& a_{kk}\cos^2\theta - 2a_{kl}\cos\theta \sin\theta +a_{ll}\sin^2\theta\nonumber\\
+b_{ll} =& a_{ll}\cos^2\theta +2a_{kl}\cos\theta \sin\theta +a_{kk}\sin^2\theta\nonumber\\
+b_{kl} =& (a_{kk}-a_{ll})\cos\theta \sin\theta +a_{kl}(\cos^2\theta-\sin^2\theta)\nonumber 
+\end{aligned}
+\right\} &
+\text{, where } j \ne k,l.
+\end{array}
+\end{equation}
+As outlined in \cite{fys4150-notes}, choosing $k$ and $l$ such that the Givens matrix targets $\mathbf{A}$'s largest off-diagonal element $a_{kl}$, will move $\mathbf{B}_i$ closer to diagonal form for every iteration. We will therefore choose the angle $\theta$ such that $b_{kl} = b_{lk} = 0$, find $\mathbf{B}_i$'s largest off-diagonal element and repeat the process until it converges for some arbitrary $\varepsilon > \max_{k \neq l} \mathbf{B}_i$.
+
+With $\mathbf{v} = \mathbf{S}^\intercal \mathbf{u}$ and $\mathbf{D} \mathbf{v} = \lambda \mathbf{v}$ we see that the transformation preserves $\mathbf{A}$'s eigenvalues such that $\mathbf{D}$ is \textit{similar} to $\mathbf{A}$, but that $\mathbf{D}$'s eigenvectors $\mathbf{v}$ are rotated by $\mathbf{S}^\intercal$ relative to $\mathbf{A}$'s. However, the transformation preserves the dot product and orthogonality:
+\[
+\mathbf{v}^\intercal \mathbf{v} = (\mathbf{S}^\intercal \mathbf{u})^\intercal (\mathbf{S}^\intercal \mathbf{u}) = \mathbf{u}^\intercal (\mathbf{S} \mathbf{S}^\intercal) \mathbf{u} = \mathbf{u}^\intercal \mathbf{u}.
+\]
+Since $\mathbf{A}$ is symmetric, its eigenvectors $\mathbf{u} = [\mathbf{u}_1 \quad \mathbf{u}_2\ldots ]$ are orthogonal and therefore, assuming normalization, we have that
+\[
+\mathbf{v}^\intercal_i \mathbf{v}_j = \mathbf{u}^\intercal_i \mathbf{u}_j = \delta_{ij},
+\]
+where $\delta_{ij}$ is the \textit{Kronecker delta}.
+
+
+\subsection{Mathematical basis for the Polynomial expansion method}
+A solution to the eigenvalue problem $\mathbf{Au} = \lambda \mathbf{u}$, with $\mathbf{A} \in \mathbb{R}^{n \times n}$, can always be obtained by solving 
+\begin{equation}
+\label{char_pol}
+p(x) = \det(\mathbf{A} - x\mathbf{I}) = 0,
+\end{equation}
+where $p(x)$ is the characteristic polynomial. However, for arbitrary $n$, an analytic solution to (\ref{char_pol}) may not always be possible \cite{fys4150-notes}. A numerical approximation is therefore necessary. From \textit{Gerschgorin's circle theorem} \cite{mat-inf4130} we know in what area the eigenvalues of matrix $\mathbf{A}$ lies in:
+\[
+|\lambda - a_{ii}| \leq \sum_{\substack{j=1 \\ j \neq i}}^{n} |a_{ij}|.
+\]
+The direct approach would therefore be search all rows $i$ and to establish the limits $[x_{min}, x_{max}]$, and to iterate over this range with some step length $h$. However, as shown in \cite{mat-inf4130}, we also know that if $\mathbf{A} \in \mathbb{R}^{n \times n}$ is irreducible, tridiagonal and symmetric, the roots of $p_k(x) = \det(\mathbf{A}_k - x\mathbf{I}_k)$, where $\mathbf{A}_k$ is the upper left $k \times k$ corner of $\mathbf{A}$, are arranged such that they separate the roots of $p_{k+1}(x)$:
+\[
+\lambda_i^{(k+1)} < \lambda_i^{(k)} < \lambda_{i+1}^{(k+1)}.
+\]
+
+Hence, with an iterative approach where we increment $k$, we will be able to narrow down the area to search for each of the roots of $p(x)$ (\ref{char_pol}).
 
 \section{Methods}
 %-Describe the methods and algorithms
@@ -66,11 +147,129 @@ This work is my submission for the second project in the course FYS4150 given at
 %-You should plug in some calculations to demonstrate your code, such as selected runs used to validate and verify your results. The latter is extremely important!! A reader needs to understand that your code reproduces selected benchmarks and reproduces previous results, either numerical and/or well-known closed form expressions.
 
 \subsection{Jacobi eigenvalue algorithm}
-Given an eigenvalue problem \[\] The Jacobi algorithm is based on the iterative multiplication of 
+As we stated above, if $\mathbf{A}$ is symmetrical and $\mathbf{S}_1$ is a Givens matrix, $\mathbf{S}_1^\intercal \mathbf{A} \mathbf{S}_1 = \mathbf{B}$  $\mathbf{B}_i$, where $\mathbf{A}$ is symmetrical. Following \cite{fys4150-p2} we can set $s = \sin \theta$, $s = \cos \theta$, $t = s/c$, and rewrite the results from (\ref{b_elements}) such that
+\begin{equation}
+\label{b_elements_new}
+\begin{array}{cc}
+\left\{
+\begin{aligned}
+b_{jj} =& a_{jj} \\
+b_{jk} =& a_{jk}c - a_{jl}s \\
+b_{jl} =& a_{jl}c + a_{jk}s \\
+b_{kk} =& a_{kk}c^2 - 2a_{kl}cs +a_{ll}s^2 \\
+b_{ll} =& a_{ll}c^2\theta +2a_{kl}cs +a_{kk}s^2 \\
+b_{kl} =& 0 
+\end{aligned}
+\right\} &
+\text{, where } j \ne k,l.
+\end{array}
+\end{equation}
+$b_{kl} = 0$ is achieved by letting
+\[
+	(a_{kk}-a_{ll})cs +a_{kl}(c^2-s^2) = 0 \Rightarrow -t^2 + \frac{a_{kk}-a_{ll}}{a_{kl}}t + 1 = 0.
+\]
+Now, with $\tau = \frac{a_{kk}-a_{ll}}{2a_{kl}}$, we get the roots $t = -\tau \pm \sqrt{\tau^2 + 1}$. For numerical stability, we must be careful to pick the right root:
+\begin{equation*}
+\begin{aligned}
+	t_{\tau<0} =& \frac{1}{|\tau| + \sqrt{\tau^2 + 1}} \\
+	t_{\tau \ge 0} =& \frac{1}{-\tau - \sqrt{\tau^2 + 1}}
+\end{aligned},
+\end{equation*}
+and at last we can update the $\mathbf{B}$'s elements in (\ref{b_elements_new}) with $c = 1/\sqrt{t^2 + 1}$ and $s = tc$.
+
+A possible implementation is outlined in Listing \ref{lst:jacobi} below. 
+
+To verify the algorithm we will apply it on the problem in (\ref{diff_1}), which has a tridiagonal Toeplitz representation 
+\begin{equation*}
+\mathbf{A} = 
+\frac{1}{h^2}
+\begin{bmatrix}
+2		& -1			& 0				& \cdots 	& 0 \\
+-1		& \ddots		& \ddots		& \ddots 	& \vdots \\
+0		& \ddots		& 				& 		 	& \\
+\vdots	& \ddots		& 				& 		 	& -1 \\
+0		& \cdots		& 				& -1 		& 2 \\
+
+\end{bmatrix},
+\end{equation*}
+where $h = 1.0/n$. See \cite{fys4150-p2} for outline. With $\varepsilon = 1.0 \cdot 10^{-2}$, the algorithm performs 113 rotations on a $10 \times 10$ matrix and gives very good precision even if the tolerance is not too strict, as we see in Table \ref{tab:toeplitz_methods} below.
+\begin{table}[ht]
+	\caption{Results from running the Jacobi eigenvalue algorithm on a $10 \times 10$ matrix with tolerance $\varepsilon = 1.0 \cdot 10^{-2}$. The precision is very high, around 7-8 leading digits, even for relatively high $\varepsilon$. The algorithm ran 113 times before it converged.}
+	\label{tab:toeplitz_methods}
+	\begin{center}
+		\begin{tabular}{lll}
+			\toprule
+			$\lambda_i$ &              exact &            numeric \\
+			\midrule
+				1 & 8.101405277101e+00 & 8.101405793692e+00 \\
+				2 & 3.174929343376e+01 & 3.174929428083e+01 \\
+				3 & 6.902785321094e+01 & 6.902785313022e+01 \\
+				4 & 1.169169973996e+02 & 1.169169963545e+02 \\
+				5 & 1.715370323453e+02 & 1.715370323455e+02 \\
+				6 & 2.284629676547e+02 & 2.284629678550e+02 \\
+				7 & 2.830830026004e+02 & 2.830830023630e+02 \\
+				8 & 3.309721467891e+02 & 3.309721465909e+02 \\
+				9 & 3.682507065662e+02 & 3.682507065738e+02 \\
+				10 & 3.918985947229e+02 & 3.918985947125e+02 \\
+			\bottomrule
+		\end{tabular}
+	\end{center}
+\end{table}
+
+\begin{lstlisting}[caption={Jacobi eigenvalue algorithm},label={lst:jacobi}]
+A = Symmetric NxN matrix
+k,l = row, col indexes
+eps = tolerance for convergence
+
+k,l = MAX(A)  \\ Finds max element in A and returns row, col indexes
+
+\\ Rotating
+DO WHILE (A(k,l) > eps)
+	\\ Finding the right rotation
+	a_kk = A(k,k);
+	a_kl = A(k,l);
+	a_ll = A(l,l);
+
+	tau = (a_ll - a_kk) / (2*a_kl);
+	IF (tau > 0)
+		t = 1/(tau + sqrt(tau^2 + 1));
+	ELSE
+		t = 1/(tau - sqrt(tau^2 + 1));
+	END IF
+	
+	c = 1/SQRT(1 + t^2);
+	s = c*t;
+	
+	\\ Updating A
+	A(k,k) = a_kk*c^2 - 2*a_kl*s*c + a_ll*s^2;
+	A(k,l) = A(l,k) = 0.;
+	A(l,l) = a_ll*c^2 + 2*a_kl*s*c + a_kk*s^2;
+	
+	DO FOR (i = 0 ... N-1)
+		IF NOT (i == k || i == l)
+			a_ik = A(i,k);
+			a_il = A(i,l);
+			A(i,k) = A(k,i) = a_ik*c - a_il*s;
+			A(i,l) = A(l,i) = a_il*c + a_ik*s;
+		END IF
+	END DO
+	k,l = MAX(A)
+END DO
+
+\end{lstlisting}
 
 
-\subsection{Polynomial expansion method}
 
+
+\subsection{Polynomial expansion algorithm}
+We saw above that the roots of $p(x) = \det(\mathbf{A} - x\mathbf{I})$ all lie in the area
+\[
+|x - a_{ii}| \leq \sum_{\substack{j=1 \\ j \neq i}}^{n} |a_{ij}|.
+\]
+If we limit our algorithm to positive definite $\mathbf{A}$, i.e. $\mathbf{A}$ is symmetric and diagonally dominant \cite{diagdom}, we get the limits for the roots
+\[
+0 \le x \le \sum_{j=1}^{n} |a_{ij}|
+\]
 
 \section{Results}
 %-Present your results
@@ -78,6 +277,10 @@ Given an eigenvalue problem \[\] The Jacobi algorithm is based on the iterative 
 %-Relate your work to other calculations/studies
 %-An eventual reader should be able to reproduce your calculations if she/he wants to do so. All input variables should be properly explained.
 %-Make sure that figures and tables should contain enough information in their captions, axis labels etc so that an eventual reader can gain a first impression of your work by studying figures and tables only.
+
+
+The Jacobi algorithm runs in $\mathcal{O}(n^3)$ time, and converges typically after $12n^3$ to $20n^3$ operations \cite{fys4150-notes}, depending on $\mathbf{A}$ and our choice of tolerance $\varepsilon > \max_{k \neq l} \mathbf{B}_i$.
+
 
 
 \section{Conclusion}
@@ -89,6 +292,6 @@ Given an eigenvalue problem \[\] The Jacobi algorithm is based on the iterative 
 
 
 \bibliographystyle{plain}
-\bibliography{project1.bib}
+\bibliography{project2.bib}
 
 \end{document}
