@@ -1,6 +1,6 @@
 CC := g++ -std=c++11
 BIN := project2 test_project2
-OBJ := utils.o
+OBJ := utils.o jacobi.o polynomial_expansion.o
 TEST_OBJ := $(OBJ) test_utils.o test_define.o
 
 ifdef optimize
