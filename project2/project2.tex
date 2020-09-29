@@ -1,0 +1,94 @@
+\documentclass[]{article}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{tabularx}
+\usepackage{hyperref}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+	language=C++,
+	aboveskip=3mm,
+	belowskip=3mm,
+	showstringspaces=false,
+	columns=flexible,
+	basicstyle={\small\ttfamily},
+	numbers=none,
+	numberstyle=\tiny\color{gray},
+	keywordstyle=\color{blue},
+	commentstyle=\color{dkgreen},
+	stringstyle=\color{mauve},
+	breaklines=false,
+	breakatwhitespace=true,
+	tabsize=2
+}
+
+\title{FYS4150 H20 Project 1}
+\author{Olav Fønstelien}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+%The abstract gives the reader a quick overview of what has been done and the most important results. Try to be to the point and state your main findings.
+
+\end{abstract}
+
+\section{Introduction}
+%When you write the introduction you could focus on the following aspects
+%-Motivate the reader, the first part of the introduction gives always a motivation and tries to give the overarching ideas
+%-What I have done
+%-The structure of the report, how it is organized etc
+
+We will study the numerical solution of eigenvalue problems for second order differential equations 
+\[
+\frac{d^2 u(\rho)}{d\rho^2} = -\lambda u(\rho),
+\]
+and
+\[
+-\frac{d^2}{d\rho^2} u(\rho) + \rho^2u(\rho)  = \lambda u(\rho).
+\]
+We will apply Dirichlet boundary conditions and.
+
+This work is my submission for the second project in the course FYS4150 given at University of Oslo, autumn 2020 \cite{fys4150},\cite{fys4150-p2}. I have implemented the algorithms in C++ using the Armadillo library. You will find the source code at my repository \url{https://github.com/fonstelien/FYS4150/tree/master/project2}.
+
+
+\section{Methods}
+%-Describe the methods and algorithms
+%-You need to explain how you implemented the methods and also say something about the structure of your algorithm and present some parts of your code
+%-You should plug in some calculations to demonstrate your code, such as selected runs used to validate and verify your results. The latter is extremely important!! A reader needs to understand that your code reproduces selected benchmarks and reproduces previous results, either numerical and/or well-known closed form expressions.
+
+\subsection{Jacobi eigenvalue algorithm}
+Given an eigenvalue problem \[\] The Jacobi algorithm is based on the iterative multiplication of 
+
+
+\subsection{Polynomial expansion method}
+
+
+\section{Results}
+%-Present your results
+%-Give a critical discussion of your work and place it in the correct context.
+%-Relate your work to other calculations/studies
+%-An eventual reader should be able to reproduce your calculations if she/he wants to do so. All input variables should be properly explained.
+%-Make sure that figures and tables should contain enough information in their captions, axis labels etc so that an eventual reader can gain a first impression of your work by studying figures and tables only.
+
+
+\section{Conclusion}
+%-State your main findings and interpretations
+%-Try as far as possible to present perspectives for future work
+%-Try to discuss the pros and cons of the methods and possible improvements
+
+
+
+
+\bibliographystyle{plain}
+\bibliography{project1.bib}
+
+\end{document}
