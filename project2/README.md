@@ -1,5 +1,5 @@
 # FYS4150 H20 Project 2
-You will find all source code in the `soruce` folder. Compile with
+You will find all source code in the `source` folder. Compile with
 ```
 source$ make
 g++ -std=c++11 -c utils.cpp -o utils.o -Wall -Wextra -larmadillo -O3 -Wno-unused -Wno-unused-parameter -Wno-unused-result 
