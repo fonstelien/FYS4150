@@ -4,9 +4,6 @@
 
 #define DEBUG(msg) cout << "DEBUG " << msg << endl;
 
-#define BISECTION_ROOT_FINDER_MAXITER 50
-#define BISECTION_ROOT_FINDER_EPS 1.E-6
-
 using namespace arma;
 using namespace std;
 
@@ -24,5 +21,5 @@ double max_off_diag_value(mat A, int *k, int *l);
 vec jacobi_solver(mat A, mat &S, int *rotations, double tolerance);
   
 /* From polynomial_expansion.cpp */
-vec quick_solver_tridiag_sym_toeplitz(int n);
-vec quick_solver_tridiag_sym_general(int n, double rho_max);
+vec poly_exp_solver_tridiag_sym_toeplitz(int n, double eps);
+vec poly_exp_solver_tridiag_sym_general(int n, double rho_max, double eps);

@@ -3,6 +3,11 @@
 using namespace arma;
 using namespace std;
 
+#define BISECTION_ROOT_FINDER_MAXITER 50
+
+/* Global variable! */
+double bisection_root_finder_eps;
+
 
 /* Abstract class */
 class Polynomial {
@@ -92,7 +97,7 @@ double bisection_root_finder(Polynomial &p, int k, double x_min, double x_max) {
   double x_mid;
   double p_mid;
   
-  while ((x_right-x_left)/(x_max-x_min) > BISECTION_ROOT_FINDER_EPS &&	\
+  while ((x_right-x_left)/(x_max-x_min) > bisection_root_finder_eps &&	\
 	 i++ < BISECTION_ROOT_FINDER_MAXITER) {
     x_mid = (x_right + x_left) / 2;
     p_mid = p(k, x_mid);
@@ -112,12 +117,15 @@ double bisection_root_finder(Polynomial &p, int k, double x_min, double x_max) {
 
 /* Quick solver for tridiagonal symmetrical Toeplitz matrix. Finds the roots by polynomial */
 /* expansion and bisection root search. */
-vec quick_solver_tridiag_sym_toeplitz(int n) {
+vec poly_exp_solver_tridiag_sym_toeplitz(int n, double eps) {
   double x_min, x_max;
   vec eigenvals(n);
   double h = 1./n;
   double d = 2.;
   double e = -1.;
+
+  /* Global variable! */
+  bisection_root_finder_eps = eps;
 
   /* P2(x) = (d-x)*P1(x) - e^2*P0(x) */  
   P p;
@@ -146,7 +154,7 @@ vec quick_solver_tridiag_sym_toeplitz(int n) {
 
 /* Quick solver for tridiagonal symmetrical Toeplitz matrix. Finds the roots by polynomial */
 /* expansion and bisection root search. */
-vec quick_solver_tridiag_sym_general(int n, double rho_max) {
+vec poly_exp_solver_tridiag_sym_general(int n, double rho_max, double eps) {
   double x_min, x_max;
   vec eigenvals(n);
   double h = rho_max/n;
@@ -154,6 +162,10 @@ vec quick_solver_tridiag_sym_general(int n, double rho_max) {
   double d = 2./h2;
   double e = -1./h2;
 
+  /* Global variable! */
+  bisection_root_finder_eps = eps;
+
+  
   /* Q2(x) = (d-x) - e^2/Q1(x) */
   Q q;
   q.init(d, e, h);
