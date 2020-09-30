@@ -1,5 +1,5 @@
 # FYS4150 H20 Project 2
-You will find all source code in the ```soruce``` folder. Compile with
+You will find all source code in the `soruce` folder. Compile with
 ```
 source$ make
 g++ -std=c++11 -c utils.cpp -o utils.o -Wall -Wextra -larmadillo -O3 -Wno-unused -Wno-unused-parameter -Wno-unused-result 
@@ -9,7 +9,7 @@ g++ -std=c++11 project2.cpp utils.o jacobi.o polynomial_expansion.o -o project2 
 g++ -std=c++11 -c test_define.cpp -o test_define.o -Wall -Wextra -larmadillo -O3 -Wno-unused -Wno-unused-parameter -Wno-unused-result 
 g++ -std=c++11 test_project2.cpp utils.o jacobi.o polynomial_expansion.o test_define.o -o test_project2 -Wall -Wextra -larmadillo -O3 -Wno-unused -Wno-unused-parameter -Wno-unused-result
 ```
-... and then have a look at the `usage` for instructions on how to run it. Enjoy! :whale:
+... and then have a look at the `usage` for instructions on how to run it. Unit tests are found in `test_project2.cpp`, and you run it with `source$ ./test_project2` Enjoy! :whale:
 ```
 source$ ./project2 -h
 usage: project2 [-h | -C | -I | -V | -T] [-j | -p] [-t | -g] [-re] n
