@@ -25,7 +25,9 @@ usage: project2 [-h | -C | -I | -V | -T] [-j | -p] [-t | -g] [-re] n
   -r   rho max in the 'general' matrix
   -e   convergence tolerance (eps)
   -n   
-Where suitable, the results are printed in csv format.example:$ project2 -Cjg -e 1.E-2 -r 10.0 -n 100
+Where suitable, the results are printed in csv format.
+example:
+$ project2 -Cjg -e 1.E-2 -r 10.0 -n 100
 exact,numeric
 3.000000000000e+00,2.779213340881e+00
 7.000000000000e+00,6.654696896637e+00

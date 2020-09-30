@@ -39,8 +39,8 @@ void print_usage() {
   cout << "  -r   rho max in the 'general' matrix" << endl;
   cout << "  -e   convergence tolerance (eps)" << endl;
   cout << "  -n   " << endl;
-  cout << "Where suitable, the results are printed in csv format.";
-  cout << "example:";
+  cout << "Where suitable, the results are printed in csv format." << endl;;
+  cout << "example:" << endl;
   cout << "$ project2 -Cjg -e 1.E-2 -r 10.0 -n 100" << endl;
   cout << "exact,numeric" << endl;
   cout << "3.000000000000e+00,2.779213340881e+00" << endl;
