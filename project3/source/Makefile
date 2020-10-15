@@ -1,6 +1,6 @@
 CC := g++ -std=c++11
 BIN := project3 test_project3
-OBJ := utils.o non_OO_earth_sun.o
+OBJ := utils.o non_OO_earth_sun.o planet.o solver.o
 TEST_OBJ := $(OBJ) catch.o
 
 ifdef optimize

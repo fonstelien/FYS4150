@@ -18,22 +18,29 @@ void initialize_earth_circular_trajectory(vec &pos, vec &vel) {
 /* Runs forward euler with earth in circular trajectory */
 void earth_circular_fwd_euler(double h, mat &results) {
   int n = results.n_rows;
-  vec pos0(3), pos1(3), vel0(3), vel1(3);
+  vec pos0(3), pos(3), vel(3);
+  double tmp;
+  
+  initialize_earth_circular_trajectory(pos, vel);
+  results(0,0) = pos(0);
+  results(0,1) = pos(1);
+  results(0,2) = pos(2);
+  results(0,3) = vel(0);
+  results(0,4) = vel(1);
+  results(0,5) = vel(2);
 
-  initialize_earth_circular_trajectory(pos0, vel0);
-
-  for (int i = 0; i < n; i++) {
-    pos1 = pos0 + h*vel0;
-    vel1 = vel0 - h*FPS/norm(pos0)*pos0;
-    pos0 = pos1;
-    vel0 = vel1;
+  for (int i = 1; i < n; i++) {
+    pos0 = pos;
+    pos += h*vel;
+    tmp = norm(pos0);
+    vel -= h*FPS/(tmp*tmp*tmp)*pos0;
     
-    results(i,0) = pos1(0);
-    results(i,1) = pos1(1);
-    results(i,2) = pos1(2);
-    results(i,3) = vel1(0);
-    results(i,4) = vel1(1);
-    results(i,5) = vel1(2);
+    results(i,0) = pos(0);
+    results(i,1) = pos(1);
+    results(i,2) = pos(2);
+    results(i,3) = vel(0);
+    results(i,4) = vel(1);
+    results(i,5) = vel(2);
   }
 }
 
@@ -41,24 +48,31 @@ void earth_circular_fwd_euler(double h, mat &results) {
 /* Runs verlet with earth in circular trajectory */
 void earth_circular_verlet(double h, mat &results) {
   int n = results.n_rows;
-  vec pos0(3), pos1(3), vel0(3), vel1(3), acc0(3), acc1(1);
-
-  initialize_earth_circular_trajectory(pos0, vel0);
-
+  vec pos(3), vel(3), acc0(3), acc1(1);
+  double tmp;
+  
+  initialize_earth_circular_trajectory(pos, vel);
+  results(0,0) = pos(0);
+  results(0,1) = pos(1);
+  results(0,2) = pos(2);
+  results(0,3) = vel(0);
+  results(0,4) = vel(1);
+  results(0,5) = vel(2);
+  
   for (int i = 0; i < n; i++) {
-    acc0 = -FPS/norm(pos0)*pos0;
-    pos1 = pos0 + h*vel0 + h*h/2*acc0;
-    acc1 = -FPS/norm(pos1)*pos1;  
-    vel1 = vel0 + h/2*(acc1 + acc0);
-    pos0 = pos1;
-    vel0 = vel1;
+    tmp = norm(pos);
+    acc0 = -FPS/(tmp*tmp*tmp)*pos;
+    pos += h*vel + h*h/2*acc0;
+    tmp = norm(pos);
+    acc1 = -FPS/(tmp*tmp*tmp)*pos;  
+    vel += h/2*(acc1 + acc0);
     
-    results(i,0) = pos1(0);
-    results(i,1) = pos1(1);
-    results(i,2) = pos1(2);
-    results(i,3) = vel1(0);
-    results(i,4) = vel1(1);
-    results(i,5) = vel1(2);
+    results(i,0) = pos(0);
+    results(i,1) = pos(1);
+    results(i,2) = pos(2);
+    results(i,3) = vel(0);
+    results(i,4) = vel(1);
+    results(i,5) = vel(2);
   }
 }
 

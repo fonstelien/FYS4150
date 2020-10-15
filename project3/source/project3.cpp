@@ -54,7 +54,6 @@ int main(int argc, char **argv) {
     case 'n':
       n = atoi(optarg);
       h = 1./n;
-      n++;  // +1 for closing the circle
       continue;
     case 'y':
       years = strtod(optarg, NULL);
@@ -66,10 +65,31 @@ int main(int argc, char **argv) {
     }
   }
 
-  /* Set number of steps to years times number of steps per year */
-  n = (int) n*years;
-  results = mat(n, 6);  // postitions and velocities for all n
+  /* Set number of steps to years times number of steps per year, +1 for the initial state */
+  n = (int) n*years + 1;
+
+  pos = {0.,0.,0.};
+  vel = {0.,0.,0.};
+  Planet sun = Planet(1, pos, vel);
+  pos = {1.,0.,0.};
+  vel = {0.,2*M_PI,0.};  
+  Planet earth = Planet(6.0E24/2.0E30, pos, vel);
+
+  pos = {2.550209154629485E+00,-4.432721232593654E+00,-3.866707508925721E-02};
+  vel = {6.447098824156304E-03,4.121019457101368E-03,-1.613529989591600E-04};
+  vel *= 365;
+  Planet jupiter = Planet(1.9E27/2.0E30, pos, vel);
+
   
+  Solver solver;
+  solver.add(sun);
+  solver.add(earth);
+  solver.add(jupiter);
+  solver.solve(n, h);
+  solver.to_csv();
+  
+  if (mode == EULER || mode == VERLET)
+    results = mat(n, 6);  // postitions and velocities for all n
  
   switch (mode) {
   case EULER:
