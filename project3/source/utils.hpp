@@ -16,5 +16,6 @@ using namespace std;
 
 
 /* From non_OO_earth_sun.cpp */
-void euler_fwd_iteration(double h, vec &pos, vec &vel);
-void velocity_verlet_iteration(double h, vec &pos, vec &vel);
+void earth_circular_fwd_euler(double h, mat &results);
+void earth_circular_verlet(double h, mat &results);
+

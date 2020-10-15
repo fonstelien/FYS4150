@@ -6,6 +6,8 @@
 /* Defaults */
 
 /* Modes */
+#define EULER 1
+#define VERLET 2
 
 /* Algorithms */
 
@@ -23,11 +25,12 @@ void print_usage() {
 
 int main(int argc, char **argv) {
   int opt;
-  vec euler_pos(3), euler_vel(3);
-  vec verlet_pos(3), verlet_vel(3);
-  int n = 0;
+  int mode = -1;
+  int n = 1;
   double h = 0.;
-
+  double years = 1.;
+  vec pos(3), vel(3);
+  mat results;
 
   // Parsing args
   if (argc < 2) {
@@ -37,14 +40,24 @@ int main(int argc, char **argv) {
    }
 
   opterr = 0;
-  while ((opt = getopt(argc, argv, "hn:")) != -1) {
+  while ((opt = getopt(argc, argv, "hevn:y:")) != -1) {
     switch (opt) {
     case 'h':
       print_usage();
       exit(0);
+    case 'e':
+      mode = EULER;
+      continue;
+    case 'v':
+      mode = VERLET;
+      continue;
     case 'n':
       n = atoi(optarg);
       h = 1./n;
+      n++;  // +1 for closing the circle
+      continue;
+    case 'y':
+      years = strtod(optarg, NULL);
       continue;
     default:
       cerr << "error: unknown option: " << (char) optopt << endl;
@@ -53,26 +66,24 @@ int main(int argc, char **argv) {
     }
   }
 
-  euler_pos[0] = 1;
-  euler_pos[1] = 0;
-  euler_pos[2] = 0;
-  euler_vel[0] = 0;
-  euler_vel[1] = 2*M_PI;
-  euler_vel[2] = 0;
-
-  verlet_pos[0] = 1;
-  verlet_pos[1] = 0;
-  verlet_pos[2] = 0;
-  verlet_vel[0] = 0;
-  verlet_vel[1] = 2*M_PI;
-  verlet_vel[2] = 0;
-
-  cout << "euler_pos0,euler_pos1,euler_pos2,verlet_pos0,verlet_pos1,verlet_pos2" << endl;
-  for (int i = 0; i < n+1; i++) {
-    cout << euler_pos[0] << "," << euler_pos[1] << "," << euler_pos[2] << ",";
-    cout << verlet_pos[0] << "," << verlet_pos[1] << "," << verlet_pos[2] << endl;
-    euler_fwd_iteration(h, euler_pos, euler_vel);
-    velocity_verlet_iteration(h, verlet_pos, verlet_vel);
+  /* Set number of steps to years times number of steps per year */
+  n = (int) n*years;
+  results = mat(n, 6);  // postitions and velocities for all n
+  
+ 
+  switch (mode) {
+  case EULER:
+    earth_circular_fwd_euler(h, results);
+    cout << "x,y,z,vx,vy,vz" << endl;
+    results.save(cout, csv_ascii);
+    break;
+  case VERLET:
+    earth_circular_verlet(h, results);
+    cout << "x,y,z,vx,vy,vz" << endl;
+    results.save(cout, csv_ascii);
+    break;
+  default:
+    break;
   }
 
   
