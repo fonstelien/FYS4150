@@ -20,31 +20,36 @@ using namespace std;
 void earth_circular_fwd_euler(double h, mat &results);
 void earth_circular_verlet(double h, mat &results);
 
+
 /* From planet.cpp */
 class Planet {
 private:
-  vec acc0, acc1;  // acceleration x,y,z directions
+  vec acc0, acc;  // acceleration x,y,z directions
 
 public:
   double m;  // mass relative to the sun
   vec pos, vel;  // position, velocity x,y,z directions
-
+  bool fixed = false;  // fixed position
+  
   // Constructor
   Planet(double mass, vec init_pos, vec init_vel);
 
-  void update_acc0(Planet *other, vec r, double r3);
-  void update_acc1(Planet *other, vec r, double r3);
-  void update_pos(double dt);
-  void update_vel(double dt);
+  // Velocity Verlet functions
+  // Call update_acc() once to initiate, then in this order:
+  void update_pos(double dt);  // update position
+  void update_acc(Planet *other, vec r, double r3);  // update acceleration towards other
+  void update_vel(double dt);  // update velocity
 };
+
 
 /* From solver.cpp */
 class Solver {
 public:
-  vector<Planet> planets;
-  mat flight_log;
+  vector<Planet> planets;  // collection of planets
+  mat flight_log;  // log of trajectories and velocities of all planets in colleciton
 
-  void add(Planet planet);
-  void solve(int steps, double dt);
-  void to_csv();
+  void add(Planet planet);  // add planet to collection
+  void build(mat system);  // builds system from system
+  void solve(int steps, double dt);  // run simulation with num. steps, time step dt
+  string csv_header();  // returns csv format header for the flight_log
 };
