@@ -5,7 +5,7 @@ using namespace std;
 
 
 /* Adds Planet planet to the back of the planets collection */
-void Solver::add(Planet planet) {
+void Solver::add(Planet *planet) {
   planets.push_back(planet);
 }
 
@@ -24,8 +24,17 @@ void Solver::build(mat system) {
     vel(1) = system(i,5);
     vel(2) = system(i,6);
     vel *= 365;
-    add(Planet(mass, pos, vel));
+    add(new Planet(mass, pos, vel));
   }
+}
+
+
+/* Frees dynamically allocated memory pointed to by planets */
+void Solver::nuke() {
+  int num_planets = planets.size();
+  for (int i = 0; i < num_planets; i++)
+    delete planets[i];
+  planets.clear();
 }
 
 
@@ -41,7 +50,7 @@ void Solver::solve(int steps, double dt) {
 
   // Log initial position
   for (int i = 0; i < num_planets; i++) {
-    p1 = &planets[i];
+    p1 = planets[i];
     flight_log(0, 6*i+0) = p1->pos(0);
     flight_log(0, 6*i+1) = p1->pos(1);
     flight_log(0, 6*i+2) = p1->pos(2);
@@ -52,12 +61,11 @@ void Solver::solve(int steps, double dt) {
 
   // Initiate accelerations
   for (int i = 0; i < num_planets-1; i++) {
-    p1 = &planets[i];
+    p1 = planets[i];
     for (int j = i+1; j < num_planets; j++) {
-      p2 = &planets[j];
+      p2 = planets[j];
       r = p2->pos - p1->pos;
-      r3 = norm(r);
-      r3 = r3*r3*r3;
+      r3 = pow(norm(r), beta+1);
       p1->update_acc(p2, r, r3);
       p2->update_acc(p1, -r, r3);
     }
@@ -67,16 +75,15 @@ void Solver::solve(int steps, double dt) {
   for (int s = 1; s < steps+1; s++) {
     // Update position
     for (int i = 0; i < num_planets; i++)
-      planets[i].update_pos(dt);
+      planets[i]->update_pos(dt);
 
     // Update accelerations at new position
     for (int i = 0; i < num_planets-1; i++) {
-      p1 = &planets[i];
+      p1 = planets[i];
       for (int j = i+1; j < num_planets; j++) {
-	p2 = &planets[j];
+	p2 = planets[j];
 	r = p2->pos - p1->pos;
-	r3 = norm(r);
-	r3 = r3*r3*r3;
+	r3 = pow(norm(r), beta+1);
 	p1->update_acc(p2, r, r3);
 	p2->update_acc(p1, -r, r3);
       }
@@ -84,11 +91,11 @@ void Solver::solve(int steps, double dt) {
 
     // Update velocity
     for (int i = 0; i < num_planets; i++)
-      planets[i].update_vel(dt);
+      planets[i]->update_vel(dt);
 
     // Log new position and velocity
     for (int i = 0; i < num_planets; i++) {
-      p1 = &planets[i];
+      p1 = planets[i];
       flight_log(s, 6*i+0) = p1->pos(0);
       flight_log(s, 6*i+1) = p1->pos(1);
       flight_log(s, 6*i+2) = p1->pos(2);
@@ -110,4 +117,11 @@ string Solver::csv_header() {
   }
 
   return header;
+}
+
+
+/* Potential energy between Planets p1, p2 in sun-masses*AU^2/yr.^2 */
+double Solver::potential_energy(Planet *p1, Planet *p2) {
+  double r = norm(p1->pos - p2->pos);
+  return -FPS*p1->m*p2->m/(beta-1)/pow(r, beta-1);
 }

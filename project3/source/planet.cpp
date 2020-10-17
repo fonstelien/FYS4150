@@ -43,3 +43,17 @@ void Planet::update_vel(double dt) {
 
   vel += dt/2*(acc + acc0);
 }
+
+
+/* Kinetic energy of this planet in sun-masses*AU^2/yr.^2 */
+double Planet::kinetic_energy() {
+  double v = norm(vel);
+  return .5*m*v*v;
+}
+
+
+/* Magnitude of angular momentum of this planet about x=0,y=0,z=0 in sun-masses*AU^2/yr. */
+double Planet::angular_momentum() {
+  vec L = cross(pos, m*vel);
+  return norm(L);
+}
