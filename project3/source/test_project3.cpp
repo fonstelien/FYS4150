@@ -116,3 +116,52 @@ TEST_CASE("System potential, kinetic energy; angular momentum", "[sys-pot-kin-mo
   REQUIRE(ep+ek == Approx(ep0+ek0).epsilon(1.0E-3));
   REQUIRE(am == Approx(am0).epsilon(1.0E-6));
 }
+
+
+TEST_CASE("Forms of the force", "[forms-of-the-force]") {
+  int n = 100000;
+  double h = 1./n;
+  vec pos(3), vel(3);
+  double ep0, ep, ek0, ek, am0, am;
+
+  pos = {0.,0.,0.};
+  vel = {0.,0.,0.};
+  Planet sun = Planet(1., pos, vel);
+  sun.fixed = true;
+  
+  pos = {1.,0.,0.};
+  vel = {0.,5.,0.};  // elliptic orbit
+  Planet earth = Planet(3.0E-6, pos, vel);
+
+  Solver solver;
+  solver.add(&sun);
+  solver.add(&earth);
+
+  n = (int) n * .26;
+  solver.beta = 3.0;
+  
+  ep0 = solver.potential_energy(&earth, &sun);
+  ek0 = earth.kinetic_energy();
+  am0 = earth.angular_momentum();
+
+  solver.solve(n/3, h);
+  ep = solver.potential_energy(&earth, &sun);
+  ek = earth.kinetic_energy();
+  am = earth.angular_momentum();
+  REQUIRE(ep+ek == Approx(ep0+ek0).epsilon(1.0E-3));
+  REQUIRE(am == Approx(am0).epsilon(1.0E-6));
+
+  solver.solve(n/3, h);
+  ep = solver.potential_energy(&earth, &sun);
+  ek = earth.kinetic_energy();
+  am = earth.angular_momentum();
+  REQUIRE(ep+ek == Approx(ep0+ek0).epsilon(1.0E-3));
+  REQUIRE(am == Approx(am0).epsilon(1.0E-6));
+
+  solver.solve(n/3, h);
+  ep = solver.potential_energy(&earth, &sun);
+  ek = earth.kinetic_energy();
+  am = earth.angular_momentum();
+  REQUIRE(ep+ek == Approx(ep0+ek0).epsilon(1.0E-3));
+  REQUIRE(am == Approx(am0).epsilon(1.0E-6));
+}

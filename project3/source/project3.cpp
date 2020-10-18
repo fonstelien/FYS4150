@@ -9,7 +9,7 @@
 #define EULER 1
 #define VERLET 2
 #define TIME 3
-#define FORCE 4
+#define PARALLEL_UNIVERSE 4
 #define SYSTEM 9
 
 /* Algorithms */
@@ -33,7 +33,11 @@ int main(int argc, char **argv) {
   double years = 1.;
   double dt = 0.;
   double beta = 2.;
-  string fname;
+  double earth_vy0 = 2*M_PI;
+  double jupiter_mass = 954.79194E-6;  // relative to the sun
+  bool include_jupiter = false;
+  bool stability = false;  // preservation of Ep+Ek, angular momentum
+  string fname = "";
   vec pos(3), vel(3);
   mat result, system;
   Solver solver;
@@ -46,7 +50,7 @@ int main(int argc, char **argv) {
    }
 
   opterr = 0;
-  while ((opt = getopt(argc, argv, "hEVTFn:y:f:b:")) != -1) {
+  while ((opt = getopt(argc, argv, "hEVTPsn:y:f:b:v:j:")) != -1) {
     switch (opt) {
     case 'h':
       print_usage();
@@ -60,8 +64,11 @@ int main(int argc, char **argv) {
     case 'T':
       mode = TIME;
       continue;
-    case 'F':
-      mode = FORCE;
+    case 'P':
+      mode = PARALLEL_UNIVERSE;
+      continue;
+    case 's':
+      stability = true;
       continue;
     case 'n':
       n = atoi(optarg);
@@ -76,6 +83,13 @@ int main(int argc, char **argv) {
       continue;
     case 'b':
       beta = strtod(optarg, NULL);
+      continue;
+    case 'v':
+      earth_vy0 = strtod(optarg, NULL);
+      continue;
+    case 'j':
+      jupiter_mass *= strtod(optarg, NULL);
+      include_jupiter = true;
       continue;
     default:
       cerr << "error: unknown option: " << (char) optopt << endl;
@@ -107,31 +121,59 @@ int main(int argc, char **argv) {
     result.save(cout, csv_ascii);
     break;
 
-  case FORCE:
+    // sun-earth system with fixed sun and variable gravitational force and earth v0
+  case PARALLEL_UNIVERSE:
     {
+      double ek0, ek, ep0, ep, am0, am;
+
       pos = {0.,0.,0.};
       vel = {0.,0.,0.};
       Planet sun = Planet(1., pos, vel);
       sun.fixed = true;
   
       pos = {1.,0.,0.};
-      vel = {0.,5.,0.};  // elliptic orbit
+      vel = {0., earth_vy0, 0.};
       Planet earth = Planet(3.0E-6, pos, vel);
 
-      solver.beta = beta;
+      pos = {-5.2,0.,0.};
+      vel = {0.,-2*M_PI/sqrt(5.2),0.};  // circular orbit
+      Planet jupiter = Planet(jupiter_mass, pos, vel);
+
       solver.add(&sun);
       solver.add(&earth);
+      if (include_jupiter)
+	solver.add(&jupiter);
+      solver.beta = beta;
+
+      am0 = earth.angular_momentum();
+      ek0 = earth.kinetic_energy();
+      ep0 = solver.potential_energy(&earth, &sun);
+      if (include_jupiter)
+	ep0 += solver.potential_energy(&earth, &jupiter);
+
       solver.solve(n, dt);
-      result = solver.flight_log.cols(6,11);
-      cout << "x,y,z,vx,vy,vz" << endl;
-      result.save(cout, csv_ascii);
+
+      am = earth.angular_momentum();
+      ek = earth.kinetic_energy();
+      ep = solver.potential_energy(&earth, &sun);
+      if (include_jupiter)
+	ep += solver.potential_energy(&earth, &jupiter);
+
+      if (stability) {
+	cout << "ek0+ep0,ek+ep,am0,am" << endl;
+	cout << ek0+ep0 << "," << ek+ep << "," << am0 << "," << am << endl;
+      }
+      else {
+	cout << solver.csv_header() << endl;
+	solver.flight_log.save(cout, csv_ascii);
+      }
     }
     break;
-
     
   case SYSTEM:
     system.load(fname, csv_ascii);
     solver.build(system);
+    solver.beta = beta;
     solver.solve(n, dt);
     cout << solver.csv_header() << endl;
     solver.flight_log.save(cout, csv_ascii);

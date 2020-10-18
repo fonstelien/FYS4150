@@ -8,6 +8,9 @@
 // four-pi-squared
 #define FPS 39.47841760435743
 
+// Crashed planet threshold
+#define CRASH_LIM 1.0E-6
+
 using namespace arma;
 using namespace std;
 
@@ -27,7 +30,8 @@ private:
 public:
   double m;  // mass relative to the sun
   vec pos, vel;  // position, velocity x,y,z directions
-  bool fixed = false;  // fixed position
+  bool fixed = false;  // planet has fixed position
+  bool crashed = false;  // planet has crashed
   
   // Constructor
   Planet(double mass, vec init_pos, vec init_vel);

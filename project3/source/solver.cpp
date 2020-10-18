@@ -74,8 +74,18 @@ void Solver::solve(int steps, double dt) {
   // Solve 
   for (int s = 1; s < steps+1; s++) {
     // Update position
-    for (int i = 0; i < num_planets; i++)
+    for (int i = 0; i < num_planets; i++) 
       planets[i]->update_pos(dt);
+
+    // Abort if planet crashed
+    for (int i = 0; i < num_planets; i++) {
+      p1 = planets[i];
+      if (p1->crashed) {
+	cerr << "error: planet " << i << " crashed." << endl;
+	flight_log = flight_log.rows(0,s);
+	return;
+      }
+    }
 
     // Update accelerations at new position
     for (int i = 0; i < num_planets-1; i++) {

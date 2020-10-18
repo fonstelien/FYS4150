@@ -18,7 +18,7 @@ Planet::Planet(double mass, vec init_pos, vec init_vel) {
 
 /* Updates planet's position with time step dt */
 void Planet::update_pos(double dt) {
-  if (fixed)
+  if (fixed || crashed)
     return;
 
   pos += dt*vel + dt*dt/2*acc;
@@ -29,8 +29,13 @@ void Planet::update_pos(double dt) {
 
 /* Updates planet's acceleration towards other Planet in direction r, r3 is dist^3 */
 void Planet::update_acc(Planet *other, vec r, double r3) {
-  if (fixed)
+  if (fixed || crashed)
     return;
+
+  if (r3 <= CRASH_LIM) {
+    crashed = true;
+    return;
+  }
 
   acc += FPS*other->m/r3*r;
 }
@@ -38,7 +43,7 @@ void Planet::update_acc(Planet *other, vec r, double r3) {
 
 /* Updates planet's velocity with time step dt */
 void Planet::update_vel(double dt) {
-  if (fixed)
+  if (fixed || crashed)
     return;
 
   vel += dt/2*(acc + acc0);
