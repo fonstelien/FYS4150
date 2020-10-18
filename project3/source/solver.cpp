@@ -38,10 +38,25 @@ void Solver::nuke() {
 }
 
 
+/* Calculates the denominator in the gravitational force equation. */
+/* This is where the varying beta and general relativistic model is implemented. */
+double Solver::force_denominator(Planet *planet, vec r) {
+  double rn = norm(r);
+  double denom = pow(rn, beta+1);
+
+  if (general_relativistic) {
+    double ln = norm(cross(r, planet->vel));
+    denom /= 1 + 3*ln*ln/(rn*rn*LIGHTPSPEED*LIGHTPSPEED);
+  }
+  
+  return denom;
+}
+
+
 /* Solve with given number of steps and time step dt. Trajectories and velocities are */
 /* logged in mat flight_log. */
 void Solver::solve(int steps, double dt) {
-  vec r;
+  vec r, v;
   double r3;
   Planet *p1, *p2;
   int num_planets = planets.size();
@@ -65,8 +80,9 @@ void Solver::solve(int steps, double dt) {
     for (int j = i+1; j < num_planets; j++) {
       p2 = planets[j];
       r = p2->pos - p1->pos;
-      r3 = pow(norm(r), beta+1);
+      r3 = force_denominator(p1, r);
       p1->update_acc(p2, r, r3);
+      r3 = force_denominator(p2, r);
       p2->update_acc(p1, -r, r3);
     }
   }
