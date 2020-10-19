@@ -9,7 +9,8 @@
 #define EULER 1
 #define VERLET 2
 #define TIME 3
-#define PARALLEL_UNIVERSE 4
+#define CREATOR 4
+#define PERIHELION 5
 #define SYSTEM 9
 
 /* Algorithms */
@@ -29,14 +30,15 @@ void print_usage() {
 int main(int argc, char **argv) {
   int opt;
   int mode = -1;
-  int n = 1;
+  long long int n = 1;
   double years = 1.;
   double dt = 0.;
-  double beta = 2.;
+  double beta = 2.0;
   double earth_vy0 = 2*M_PI;
   double jupiter_mass = 954.79194E-6;  // relative to the sun
   bool include_jupiter = false;
   bool stability = false;  // preservation of Ep+Ek, angular momentum
+  bool general_relativistic = false;  // enables gen. rel. grav. force in PERIHELION mode
   string fname = "";
   vec pos(3), vel(3);
   mat result, system;
@@ -50,7 +52,7 @@ int main(int argc, char **argv) {
    }
 
   opterr = 0;
-  while ((opt = getopt(argc, argv, "hEVTPsn:y:f:b:v:j:")) != -1) {
+  while ((opt = getopt(argc, argv, "hEVTCPsrn:y:f:b:v:j:")) != -1) {
     switch (opt) {
     case 'h':
       print_usage();
@@ -64,8 +66,11 @@ int main(int argc, char **argv) {
     case 'T':
       mode = TIME;
       continue;
+    case 'C':
+      mode = CREATOR;
+      continue;
     case 'P':
-      mode = PARALLEL_UNIVERSE;
+      mode = PERIHELION;
       continue;
     case 's':
       stability = true;
@@ -83,6 +88,9 @@ int main(int argc, char **argv) {
       continue;
     case 'b':
       beta = strtod(optarg, NULL);
+      continue;
+    case 'r':
+      general_relativistic = true;
       continue;
     case 'v':
       earth_vy0 = strtod(optarg, NULL);
@@ -103,26 +111,29 @@ int main(int argc, char **argv) {
 
   // Run simulation
   switch (mode) {
+    // Non-object oriented Euler
   case EULER:
     result = earth_circular_fwd_euler(dt, n);
     cout << "x,y,z,vx,vy,vz" << endl;
     result.save(cout, csv_ascii);
     break;
-    
+
+    // Non-object oriented Verlet    
   case VERLET:
     result = earth_circular_verlet(dt, n);
     cout << "x,y,z,vx,vy,vz" << endl;
     result.save(cout, csv_ascii);
     break;
 
+    // Times Euler and Verlet with pre-defined time steps
   case TIME:
     result = time_algorithms();
     cout << "n,euler,verlet" << endl;
     result.save(cout, csv_ascii);
     break;
 
-    // sun-earth system with fixed sun and variable gravitational force and earth v0
-  case PARALLEL_UNIVERSE:
+    // sun-earth system with fixed sun and variable grav. force, earth v0, size of Jupiter
+  case CREATOR:
     {
       double ek0, ek, ep0, ep, am0, am;
 
@@ -143,7 +154,6 @@ int main(int argc, char **argv) {
       solver.add(&earth);
       if (include_jupiter)
 	solver.add(&jupiter);
-      solver.beta = beta;
 
       am0 = earth.angular_momentum();
       ek0 = earth.kinetic_energy();
@@ -151,6 +161,7 @@ int main(int argc, char **argv) {
       if (include_jupiter)
 	ep0 += solver.potential_energy(&earth, &jupiter);
 
+      solver.beta = beta;
       solver.solve(n, dt);
 
       am = earth.angular_momentum();
@@ -169,11 +180,18 @@ int main(int argc, char **argv) {
       }
     }
     break;
-    
+
+    // Calculate perihelion of planet Mercury
+  case PERIHELION:
+    cout << scientific;
+    cout.precision(4);
+    cout << perihelion_of_mercury(dt, n, general_relativistic) << endl;
+    break;
+
+    // Loads system from file and solves it
   case SYSTEM:
     system.load(fname, csv_ascii);
     solver.build(system);
-    solver.beta = beta;
     solver.solve(n, dt);
     cout << solver.csv_header() << endl;
     solver.flight_log.save(cout, csv_ascii);

@@ -53,7 +53,7 @@ mat earth_circular_fwd_euler(double h, int n) {
 /* trajectory and velocity in flight_log. */
 mat earth_circular_verlet(double h, int n) {
   mat flight_log(n,6);
-  vec pos(3), vel(3), acc0(3), acc(1);
+  vec pos(3), vel(3), acc0(3), acc(3);
   double tmp;
   
   initialize_earth_circular_trajectory(pos, vel);

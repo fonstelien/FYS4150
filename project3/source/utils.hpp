@@ -8,11 +8,11 @@
 // four-pi-squared
 #define FPS 39.47841760435743
 
-// Speed of light in AU per year
-#define LIGHTPSPEED (2.99792458E+8 / 1.495978707E+11 * 60*60*24*365)
-
 // Crashed planet threshold
 #define CRASH_LIM 1.0E-6
+
+// Speed of light in AU per year
+#define LIGHTPSPEED (2.99792458E+8 / 1.495978707E+11 * 60*60*24*365)
 
 using namespace arma;
 using namespace std;
@@ -24,6 +24,8 @@ mat earth_circular_fwd_euler(double h, int n);
 mat earth_circular_verlet(double h, int n);
 mat time_algorithms();
 
+/* From perihelion_of_mercury.cpp */
+double perihelion_of_mercury(double h, long long int n, bool general_relativistic);
 
 /* From planet.cpp */
 class Planet {
@@ -55,13 +57,11 @@ public:
   vector<Planet *> planets;  // collection of planets
   mat flight_log;  // log of trajectories and velocities of all planets in colleciton
   double beta = 2.;  // experimental exponent in Newton's law of gravitation
-  bool general_relativistic = false;  // enables general relativistic gravitational force
   
   void add(Planet *planet);  // add planet to collection
   void build(mat system);  // builds system from system
   void nuke();  // frees Planets pointed to by planets and clear()s the vector
-  double force_denominator(Planet *planet, vec r);  // denominator in the grav. force eq.
   void solve(int steps, double dt);  // run simulation with num. steps, time step dt
   string csv_header();  // returns csv format header for the flight_log
-  double potential_energy(Planet *p1, Planet *p2);
+  double potential_energy(Planet *p1, Planet *p2);  // potential energy between p1 and p2
 };
