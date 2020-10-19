@@ -11,9 +11,6 @@
 // Crashed planet threshold
 #define CRASH_LIM 1.0E-6
 
-// Speed of light in AU per year
-#define LIGHTPSPEED (2.99792458E+8 / 1.495978707E+11 * 60*60*24*365)
-
 using namespace arma;
 using namespace std;
 
