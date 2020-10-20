@@ -1,0 +1,232 @@
+\documentclass[]{article}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{tabularx}
+\usepackage{hyperref}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+	%language=C++,
+	aboveskip=3mm,
+	belowskip=3mm,
+	showstringspaces=false,
+	columns=flexible,
+	basicstyle={\small\ttfamily},
+	numbers=none,
+	numberstyle=\tiny\color{gray},
+	keywordstyle=\color{blue},
+	commentstyle=\color{dkgreen},
+	stringstyle=\color{mauve},
+	breaklines=false,
+	breakatwhitespace=true,
+	tabsize=2
+}
+
+\title{FYS4150 Project 3:\\Celestial Mechanics with Numerical Methods}
+\author{Olav Fønstelien}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+%The abstract gives the reader a quick overview of what has been done and the most important results. Try to be to the point and state your main findings. It could be structured as follows 
+% - Short introduction to topic and why its important 
+% - Introduce a challenge or unresolved issue with the topic (that you will try to solve) 
+% - What have you done to solve this 
+% - Main Results 
+% - The implications
+
+
+\end{abstract}
+
+
+\section{Introduction} \label{intro}
+%When you write the introduction you could focus on the following aspects
+% - Motivate the reader, the first part of the introduction gives always a motivation and tries to give the overarching ideas
+For all its beauty, the limits of differential calculus quickly becomes apparent when it comes to the study of planetary movements. The classic $n$-body problem for describing the movement of bodies in interacting gravitational fields can be perfectly accounted for with closed form for $n=2$, but problems arise already at $n=3$. Hence the need for numerical methods, and in this report we will develop an $n$-body \textit{solver} based on the \textit{Velocity Verlet} algorithm \cite{fys4150-notes}. 
+
+% - What I have done
+% - The structure of the report, how it is organized etc
+Lets first revisit some of the basics of celestial mechanics, which will serve as a mathematical background for our development of the algorithms.
+
+
+
+
+
+\section{Background: Celestial Mechanics} \label{celestial-mechanics}
+It was \textit{Johannes Kepler} (1571-1630) who first described the planets' orbits correctly. By observation he found that all planets move in elliptic orbits with the sun at one of the two foci; and that the square of their periods $T$ are directly proportional to the cube of their semi-major axis $a$ \cite{hibbeler2001} (Kepler's first and third laws, respectively). Perfect harmony prevailed, it seemed:
+\begin{equation}
+	T^2 \propto a^3.
+\end{equation}
+Later, \textit{Isaac Newton} (1642-1727) would describe with his gravitational law the mutual attractive force $F_G$ between two bodies of mass $M, m$ at distance $r$ apart as
+\begin{equation} \label{newton-grav}
+	F_G = \frac{GMm}{r^2},
+\end{equation}
+where $G$ is the gravitational constant. Further, as a result of Newton's second law, the centripetal force acting on a body with mass $m$ moving along a circular path with radius $r$ at angular velocity $\omega$ is given by
+\begin{equation}
+	F_C = mr\omega^2.
+\end{equation}
+Kepler, having died 12 years before Newton's birth, would have been astonished when he discovered that when combining these laws, his own would have been confirmed. For the simple case of a circular orbit, with the Sun's mass $M$, the planet mass $m$, and the angular velocity $\omega = 2\pi/T$, we get by equating $F_G$ and $F_C$ that
+\begin{equation} \label{r3-T2}
+	mr\bigg(\frac{2\pi}{T}\bigg)^2 = \frac{GMm}{r^2} \Rightarrow \frac{r^3}{T^2} = \frac{GM}{4\pi^2}.
+\end{equation}
+
+A result of this combination of Newton's gravitational and second laws is that they postulate the conditions for closed elliptic orbits. Following \cite{hibbeler2001}, a planetary orbit's \textit{eccentricity} is given by
+\begin{equation}
+	e = \frac{r_0 v_0^2}{GM} - 1,
+\end{equation}
+where $r_0$ is the planet's distance from the Sun at any of the orbit's vertices, and $v_0$ is the velocity at that point. Calculating $e$ we get the trajectories:
+\begin{equation}
+\begin{aligned}
+	e < 1 \quad &: \quad \text{closed elliptic} \\
+	e \ge 1 \quad &: \quad \text{parabolic/hyperbolic trajectory}.
+\end{aligned}
+\end{equation}
+The special case $e=0$ gives a circular orbit, and for the cases $e \ge 1$, the planet escapes into space, never to return.
+
+The last of Kepler's observations was that the planets move in their orbits such that the line joining it to the sun sweeps over equal areas in equal intervals of time, whatever the line's length. Again, see \cite{hibbeler2001}. This observation of constant \textit{areal velocity}, called Kepler's second law, can be written
+\begin{equation}
+	\frac{dA}{dt} = \frac{1}{2} r^2 \frac{d\theta}{dt} = const. \quad.
+\end{equation}
+It would also be explained as a consequence of Newton's discoveries. The \textit{angular momentum} of a body with mass $m$ moving at velocity $\mathbf{v}$ at distance $\mathbf{r}$ from a fixed point $O$ is defined as $\mathbf{L}_O = \mathbf{r} \times m\mathbf{v}$. Now, with $\mathbf{r}$ and $\mathbf{v}$ at an angle $\phi$ to each other, $|\mathbf{r} \times \mathbf{v}| = rv \sin \phi$; and the component of $\mathbf{v}$ perpendicular to $\mathbf{r}$ is the body's velocity on a circular path about $O$, so $v \sin \phi = r \frac{d\theta}{dt}$. Bringing this all together, we get that Kepler's second law foresaw the conservation of angular momentum:
+\begin{equation}
+	\mathbf{L}_O = L_O\mathbf{e} = (mrv \sin \phi )\mathbf{e} = mr^2 \frac{d\theta}{dt} \mathbf{e} = 2m \frac{dA}{dt} \mathbf{e} = \text{\textit{const. vector}} \quad,
+\end{equation}
+where $\mathbf{e}$ is a unit vector.
+
+\section{Numerical Methods for Celestial Mechanics} \label{methods}
+% - Describe the methods and algorithms
+% - You need to explain how you implemented the methods and also say something about the structure of your algorithm and present some parts of your code
+% - You should plug in some calculations to demonstrate your code, such as selected runs used to validate and verify your results. The latter is extremely important!! A reader needs to understand that your code reproduces selected benchmarks and reproduces previous results, either numerical and/or well-known closed form expressions.
+
+We will start with developing a solver for the simplified 2-body problem with a fixed Sun at the center and a planet moving around it. We will use this for proving the correctness our algorithm, as well as studying its efficiency with regards to CPU time and accuracy. Then, we will proceed to solving the general $n$-body problem in an object-oriented manner. At the end of this section, we briefly discuss the inclusion of a general relativistic factor for calculating the slow rotation of the perihelion of Mercury.
+
+\subsection{Sun-Earth System with Fixed Sun} \label{sun-earth}
+The location at time $t+h$ of an body moving along a straight line with non-constant velocity $v = v(t)$, is given by the Taylor expansion
+\begin{equation}
+	x(t+h) = x(t) + hv(t) + O(h^2),
+\end{equation}
+where $O(h^2)$ is the truncation error. The velocity $v(t+h)$ at the new position $x(t+h)$, is again given by a new Taylor series
+\begin{equation}
+	v(t+h) = v(t) + h \frac{dv}{dt}(t) + O(h^2) \quad \text{, where} \quad \frac{dv}{dt}(t) = a(t).
+\end{equation}
+We discretize time in the time interval $[t, t + \Delta t]$ by letting $t_i = t + ih$, where $i \in [0,n]$ and $h = \Delta t/n$. We then get the discrete equations for the body's motion as
+\begin{equation}
+\begin{aligned}
+	x_{i+1} &= x_i + hv_i \\
+	v_{i+1} &= v_i + ha_i
+\end{aligned} \quad.
+\end{equation}
+
+
+With these equations, called \textit{Euler's forward method}, we can can iteratively calculate the object's movement along the $x$ axis, and expanding to three dimensions yields corresponding equations for movement along the $y$ and $z$ axes. 
+
+To apply Euler's forward method on Newton's gravitational law (\ref{newton-grav}), we must plug in Newton's gravitational law (\ref{newton-grav}) for the acceleration. On vector form and in spherical coordinates the acceleration is given as
+\begin{equation} \label{a-spherical}
+	\mathbf{a}_i = \frac{GM}{r_i^3} \mathbf{r}_i.
+\end{equation}
+where $M$ is the mass of the attracting body. In the Solar System it is convenient to refer time, mass and space to the Earth-Sun system. Hence, we will scale away $GM$ from Equation (\ref{a-spherical}) using the relationship we found in Equation (\ref{r3-T2}), namely $GM = 4\pi^2r^3/T^2$, where $M$ is the mass of the Sun, $r = 1$ AU, and $T = 1$ year, such that
+\begin{equation} \label{a-spherical}
+	GM = 4\pi^2 \quad \text{[AU}^3/\text{yr.}^2\text{].}
+\end{equation}
+
+
+Now, the with cartesian representation of $\mathbf{a}_i$, we get the full set of forward Euler equations in three dimensions for solving the problem of planetary movement about the Sun, where the Sun is kept fixed at the center:
+\begin{equation} \label{euler-fwd}
+\begin{aligned}
+	&x_{i+1} = x_i + hv_{x,i} ,\quad v_{x,i+1} = v_{x,i} - 4\pi^2h\frac{x_i}{r_i^3} ,\\
+	&y_{i+1} = y_i + hv_{y,i} ,\quad v_{y,i+1} = v_{y,i} - 4\pi^2h\frac{y_i}{r_i^3} ,\\
+	&z_{i+1} = z_i + hv_{z,i} ,\quad v_{z,i+1} = v_{z,i} - 4\pi^2h\frac{z_i}{r_i^3} ,\\
+\end{aligned}
+\end{equation}
+where $r_i = \sqrt{x_i^2 + y_i^2 + z_i^2}$.
+
+
+A problem with this method, though, is that it does not conserve energy, it is not symplectic \cite{notes-10-02}. A correction to this is possible with the small modification $x_{i+1} = x_i + hv_{x,i+1}$, known as the the \textit{Euler-Cromer method}. However, this too has a truncation error $O(h^2)$, which means that it quickly becomes too coarse or inefficient if we want to calculate long time spans with high precision. An alternative method, which is both energy conserving and more precise is the \textit{Velocity Verlet} method. Taking again the Taylor expansion for calculating the movement of a body along a straight line, we have
+\begin{equation}
+\begin{aligned}
+	x(t+h) &= x(t) + hv(t) + \frac{h^2}{2}a(t) + O(h^3) \\
+	v(t+h) &= v(t) + ha(t) + \frac{h^2}{2}\frac{d^2v}{dt^2}(t) + O(h^3)
+\end{aligned} \quad ,
+\end{equation}
+where $O(h^3)$ is the truncation error. $\frac{d^2v}{dt^2}(t)$ can itself be found using a Taylor expansion, such that
+\begin{equation}
+	\frac{d^2v}{dt^2}(t) = \frac{a(t+h) - a(t)}{h} + O(h),
+\end{equation}
+which, since $h^2O(h)$ yields $O(h^3)$, gives us 
+\begin{equation}
+\begin{aligned}
+	x(t+h) &= x(t) + hv(t) + \frac{h^2}{2}a(t) + O(h^3) \\
+	v(t+h) &= v(t) + \frac{h}{2}(a(t+h) + a(t)) + O(h^3)
+\end{aligned} \quad .
+\end{equation}
+We see that we need $a(t+h)$ in order to calculate $v(t+h)$, which may not always be possible. For solving gravitational problems, however, the acceleration is dependent on position only, meaning that if we calculate $x(t+h)$ first, we can obtain $a(t+h)$ and then move on to calculating $v(t+h)$.
+
+Discretizing as we did for Euler's Forward method, we get again the full set of equations for solving the problem of planetary movement about the Sun by the Velocity Verlet method, with the Sun fixed at the center:
+\begin{equation} \label{verlet}
+\begin{aligned}
+	&x_{i+1} = x_i - 2\pi^2h^2\frac{x_i}{r_i^3} , \quad v_{x,i+1} = v_{x,i} - 2\pi^2h \bigg(\frac{x_{i+1}}{r_{i+1}^3} + \frac{x_i}{r_i^3} \bigg) ,\\
+	&y_{i+1} = y_i - 2\pi^2h^2\frac{y_i}{r_i^3} , \quad v_{y,i+1} = v_{y,i} - 2\pi^2h \bigg(\frac{y_{i+1}}{r_{i+1}^3} + \frac{y_i}{r_i^3} \bigg) ,\\
+	&z_{i+1} = z_i - 2\pi^2h^2\frac{z_i}{r_i^3} , \quad v_{z,i+1} = v_{z,i} - 2\pi^2h \bigg(\frac{z_{i+1}}{r_{i+1}^3} + \frac{z_i}{r_i^3} \bigg) ,\\
+\end{aligned}
+\end{equation}
+where $r_i = \sqrt{x_i^2 + y_i^2 + z_i^2}$.
+
+Comparing the Verlocity Verlet method with Euler's Forward method, we see that Euler's is more efficient with regards to FLOPs (FLoting point OPersations) per iteration. Euler needs one multiplication and one addition for each position $x_i, y_i, z_i$; plus two multiplications and one subtraction for each velocity $v_{x,i}, v_{y,i}, v_{z,i}$. 15 FLOPs in total. However, $r_i$ and the factor $r_i^{-3}$ must be calculated once per iteration. This involves square root and floating point divide operations, which are much more expensive than regular FLOPs and are not pipelined properly in the CPU \cite{hager2010introduction}. For Velocity Verlet, total number of FLOPs is $3+4=7$, and even if the method has both $r_i, r_i^{-3}$ and $r_{i+1}, r_{i+1}^{-3}$ terms, we store these between the iterations such that the most expensive operations are done only once.
+
+\begin{table}[!ht]
+	\caption{Averaged CPU times for Euler's Forward and Velocity Verlet methods when solving the Sun-Earth system with fixed Sun. As could be expected, as soon as the pipelining reaches its full potential, scaling is perfect. The speed difference between the methods is somewhat surprising, though, since that cannot all be explained by the $7/5=1.4$ FLOPs ratio between them. Both methods are CPU-bound.}
+	\label{tab:cpu-time}
+	\begin{center}
+		\begin{tabular}{rrrr}
+			\toprule
+			n &     Euler's Forward [s] &    Velocity Verlet [s] & ratio [\%] \\
+			\midrule
+			$10^1$ & 2.000e-07 & 1.000e-06 & 500 \\
+			$10^2$ & 1.500e-06 & 3.500e-06 & 233 \\
+			$10^3$ & 1.450e-05 & 2.980e-05 & 206 \\
+			$10^4$ & 1.439e-04 & 2.817e-04 & 196 \\
+			$10^5$ & 1.511e-03 & 2.879e-03 & 191 \\
+			$10^6$ & 1.543e-02 & 2.699e-02 & 175 \\
+			$10^7$ & 1.573e-01 & 2.776e-01 & 176 \\
+			$10^8$ & 1.526e+00 & 2.730e+00 & 179 \\
+			$10^9$ & 1.530e+01 & 2.735e+01 & 179 \\
+			\bottomrule
+		\end{tabular}
+	\end{center}
+\end{table}
+
+
+
+
+
+
+\subsection{n-Body System} \label{n-body}
+
+\section{Results} \label{results}
+% - Present your results
+% - Give a critical discussion of your work and place it in the correct context.
+% - Relate your work to other calculations/studies
+% - An eventual reader should be able to reproduce your calculations if she/he wants to do so. All input variables should be properly explained.
+% - Make sure that figures and tables should contain enough information in their captions, axis labels etc so that an eventual reader can gain a first impression of your work by studying figures and tables only.
+
+
+
+
+\section{Discussion and Conclusion} \label{conclusion}
+% - State your main findings and interpretations
+% - Try as far as possible to present perspectives for future work
+% - Try to discuss the pros and cons of the methods and possible improvements
+
+\clearpage
+\bibliographystyle{plain}
+\bibliography{project3.bib}
+\end{document}
