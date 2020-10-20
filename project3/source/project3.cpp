@@ -114,14 +114,14 @@ int main(int argc, char **argv) {
     // Non-object oriented Euler
   case EULER:
     result = earth_circular_fwd_euler(dt, n);
-    cout << "x,y,z,vx,vy,vz" << endl;
+    cout << "x,y,vx,vy" << endl;
     result.save(cout, csv_ascii);
     break;
 
     // Non-object oriented Verlet    
   case VERLET:
     result = earth_circular_verlet(dt, n);
-    cout << "x,y,z,vx,vy,vz" << endl;
+    cout << "x,y,vx,vy" << endl;
     result.save(cout, csv_ascii);
     break;
 

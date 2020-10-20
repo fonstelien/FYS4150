@@ -9,40 +9,34 @@ using namespace std;
 void initialize_earth_circular_trajectory(vec &pos, vec &vel) {
   pos(0) = 1.;  // distance 1 AU from the sun
   pos(1) = 0.;
-  pos(2) = 0.;
   vel(0) = 0.;
-  vel(1) = 2*M_PI;  // 1 rot per annum
-  vel(2) = 0.;
+  vel(1) = 2*M_PI;  // one circular rotation per annum
 }
 
 
 /* Runs forward euler with earth in circular orbit and logs */
-/* trajectory and velocity in flight_log. */
+/* trajectory and velocity in flight_log. Calculations in xy plane only. */
 mat earth_circular_fwd_euler(double h, int n) {
-  mat flight_log(n,6);
-  vec pos0(3), pos(3), vel(3);
-  double tmp;
+  mat flight_log(n,4);
+  vec pos0(2), pos(2), vel(2);
+  double r;
   
   initialize_earth_circular_trajectory(pos, vel);
   flight_log(0,0) = pos(0);
   flight_log(0,1) = pos(1);
-  flight_log(0,2) = pos(2);
-  flight_log(0,3) = vel(0);
-  flight_log(0,4) = vel(1);
-  flight_log(0,5) = vel(2);
+  flight_log(0,2) = vel(0);
+  flight_log(0,3) = vel(1);
 
   for (int i = 1; i < n; i++) {
     pos0 = pos;
     pos += h*vel;
-    tmp = norm(pos0);
-    vel -= h*FPS/(tmp*tmp*tmp)*pos0;
+    r = norm(pos0);
+    vel -= h*FPS/(r*r*r)*pos0;
     
     flight_log(i,0) = pos(0);
     flight_log(i,1) = pos(1);
-    flight_log(i,2) = pos(2);
-    flight_log(i,3) = vel(0);
-    flight_log(i,4) = vel(1);
-    flight_log(i,5) = vel(2);
+    flight_log(i,2) = vel(0);
+    flight_log(i,3) = vel(1);
   }
 
   return flight_log;  
@@ -50,43 +44,43 @@ mat earth_circular_fwd_euler(double h, int n) {
 
 
 /* Runs Velocity Verlet with earth in circular orbit and logs */
-/* trajectory and velocity in flight_log. */
+/* trajectory and velocity in flight_log. Calculations in xy plane only. */
 mat earth_circular_verlet(double h, int n) {
-  mat flight_log(n,6);
-  vec pos(3), vel(3), acc0(3), acc(3);
-  double tmp;
+  mat flight_log(n,4);
+  vec pos(2), vel(2), acc0(2), acc(2);
+  double r;
   
   initialize_earth_circular_trajectory(pos, vel);
   flight_log(0,0) = pos(0);
   flight_log(0,1) = pos(1);
-  flight_log(0,2) = pos(2);
-  flight_log(0,3) = vel(0);
-  flight_log(0,4) = vel(1);
-  flight_log(0,5) = vel(2);
+  flight_log(0,2) = vel(0);
+  flight_log(0,3) = vel(1);
 
   // Initializing
-  tmp = norm(pos);
-  acc = -FPS/(tmp*tmp*tmp)*pos;
+  r = norm(pos);
+  acc = -FPS/(r*r*r)*pos;
 
   for (int i = 1; i < n; i++) {
     pos += h*vel + h*h/2*acc;
     acc0 = acc;
-    tmp = norm(pos);
-    acc = -FPS/(tmp*tmp*tmp)*pos;  
+    r = norm(pos);
+    acc = -FPS/(r*r*r)*pos;  
     vel += h/2*(acc + acc0);
     
     flight_log(i,0) = pos(0);
     flight_log(i,1) = pos(1);
-    flight_log(i,2) = pos(2);
-    flight_log(i,3) = vel(0);
-    flight_log(i,4) = vel(1);
-    flight_log(i,5) = vel(2);
+    flight_log(i,2) = vel(0);
+    flight_log(i,3) = vel(1);
   }
 
   return flight_log;
 }
 
 
+/* Runs both Euler and Verlet algorithms and times them. */
+/* Reported times are averaged over 10 runs. */
+/* NOTE: Even if the orbit is circular in the xy plane, I still want the */
+/* time for three-dimensional calculations for the report. */
 mat time_algorithms() {
   clock_t start, stop;
   double lapsed_time;
@@ -97,20 +91,22 @@ mat time_algorithms() {
   int n;
   double h;
   vec pos0(3), pos(3), vel(3), acc0(3), acc(3);
-  double tmp;
+  double r;
 
   // Time Euler runs
   for (int i = 0; i < T; i++) {
     n = N(i);
     h = 1./n;
     start = clock();
-    for (int r = 0; r < runs; r++) {
+    for (int run = 0; run < runs; run++) {
       initialize_earth_circular_trajectory(pos, vel);
+      pos(2) = 0.;
+      vel(2) = 0.;
       for (int j = 0; j < n; j++) {
 	pos0 = pos;
 	pos += h*vel;
-	tmp = norm(pos0);
-	vel -= h*FPS/(tmp*tmp*tmp)*pos0;
+	r = norm(pos0);
+	vel -= h*FPS/(r*r*r)*pos0;
       }
     }
     stop = clock();
@@ -124,17 +120,18 @@ mat time_algorithms() {
     n = N(i);
     h = 1./n;
     start = clock();
-    for (int r = 0; r < runs; r++) {
+    for (int run = 0; run < runs; run++) {
       initialize_earth_circular_trajectory(pos, vel);
-      tmp = norm(pos);
-      acc = -FPS/(tmp*tmp*tmp)*pos;
+      pos(2) = 0.;
+      vel(2) = 0.;
+      r = norm(pos);
+      acc = -FPS/(r*r*r)*pos;
       for (int j = 0; j < n; j++) {
 	pos += h*vel + h*h/2*acc;
 	acc0 = acc;
-	tmp = norm(pos);
-	acc = -FPS/(tmp*tmp*tmp)*pos;  
+	r = norm(pos);
+	acc = -FPS/(r*r*r)*pos;  
 	vel += h/2*(acc + acc0);
-
       }
       stop = clock();
       lapsed_time = (double) (stop-start) / CLOCKS_PER_SEC;

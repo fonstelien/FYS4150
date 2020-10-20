@@ -12,11 +12,9 @@ using namespace std;
 void get_pos_and_vel(int i, mat &flight_log, vec &pos, vec &vel) {
   pos(0) = flight_log(i,0);
   pos(1) = flight_log(i,1);
-  pos(2) = flight_log(i,2);
 
-  vel(0) = flight_log(i,3);
-  vel(1) = flight_log(i,4);
-  vel(2) = flight_log(i,5);
+  vel(0) = flight_log(i,2);
+  vel(1) = flight_log(i,3);
 }
 
 
@@ -25,7 +23,7 @@ TEST_CASE("Verlet energy and position tests", "[verlet-tests]") {
   double h = 1./n;
   double ep0, ep, ek0, ek;
   mat flight_log;
-  vec pos0(3), pos(3), vel0(3), vel(3);
+  vec pos0(2), pos(2), vel0(2), vel(2);
   
   flight_log = earth_circular_verlet(h, n+1);
   get_pos_and_vel(0, flight_log, pos0, vel0);
@@ -42,7 +40,6 @@ TEST_CASE("Verlet energy and position tests", "[verlet-tests]") {
   // Test arrival at initial position
   REQUIRE(pos(0) == Approx(pos0(0)).margin(1E-6));
   REQUIRE(pos(1) == Approx(pos0(1)).margin(1E-6));
-  REQUIRE(pos(2) == Approx(pos0(2)).margin(1E-6));
 }
 
 
@@ -51,7 +48,7 @@ TEST_CASE("Euler energy and position tests", "[euler-tests]") {
   double h = 1./n;
   double ep0, ep, ek0, ek;
   mat flight_log;
-  vec pos0(3), pos(3), vel0(3), vel(3);
+  vec pos0(2), pos(2), vel0(2), vel(2);
   
   flight_log = earth_circular_fwd_euler(h, n+1);
   get_pos_and_vel(0, flight_log, pos0, vel0);
@@ -68,7 +65,6 @@ TEST_CASE("Euler energy and position tests", "[euler-tests]") {
   // Test arrival at initial position
   REQUIRE(pos(0) == Approx(pos0(0)).margin(1.0E-3));
   REQUIRE(pos(1) == Approx(pos0(1)).margin(1.0E-3));
-  REQUIRE(pos(2) == Approx(pos0(2)).margin(1.0E-3));
 }
 
 

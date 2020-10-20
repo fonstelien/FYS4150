@@ -4,7 +4,7 @@ using namespace arma;
 using namespace std;
 
 // Speed of light in AU per year
-#define LIGHTPSPEED (2.99792458E+8 / 1.495978707E+11 * 60*60*24*365)
+#define LIGHTPSPEED (2.99792458E+8 / 1.495978707E+11 * 60*60*24*365.25)
 
 // One arc second
 #define ARCSECOND (M_PI/180/60/60)
@@ -19,8 +19,8 @@ double perihelion_of_mercury(double h, long long int n, bool general_relativisti
   double arcsecs;
   double c2 = LIGHTPSPEED*LIGHTPSPEED;
   
-  pos = {0.3075,0.,0.};
-  vel = {0.,12.44,0.};
+  pos = {0.3075, 0.};
+  vel = {0., 12.44};
 
   x0 = x1 = xp = pos(0);
   y0 = y1 = yp = pos(1);
