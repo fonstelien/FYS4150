@@ -79,7 +79,7 @@ Kepler, having died 12 years before Newton's birth, would have been astonished w
 	mr\bigg(\frac{2\pi}{T}\bigg)^2 = \frac{GMm}{r^2} \Rightarrow \frac{r^3}{T^2} = \frac{GM}{4\pi^2}.
 \end{equation}
 
-A result of this combination of Newton's gravitational and second laws is that they postulate the conditions for closed elliptic orbits. Following \cite{hibbeler2001}, a planetary orbit's \textit{eccentricity} is given by
+An important result of this combination of Newton's gravitational and second laws is that they postulate the conditions for closed elliptic orbits. Following \cite{hibbeler2001}, a planetary orbit's \textit{eccentricity} is given by
 \begin{equation}
 	e = \frac{r_0 v_0^2}{GM} - 1,
 \end{equation}
@@ -90,7 +90,19 @@ where $r_0$ is the planet's distance from the Sun at any of the orbit's vertices
 	e \ge 1 \quad &: \quad \text{parabolic/hyperbolic trajectory}.
 \end{aligned}
 \end{equation}
-The special case $e=0$ gives a circular orbit, and for the cases $e \ge 1$, the planet escapes into space, never to return.
+The special case $e=0$ gives a circular orbit, and for the cases $e \ge 1$, the planet escapes into space, never to return. This is easily seen by reminding ourselves that the sum of the planet's kinetic energy, $E_K=\frac{1}{2}mv^2$, and potential energy, $E_P=-GMm/r$, is preserved during flight, such that
+\begin{equation}
+E = E_K + E_P = \frac{1}{2}mv^2 - GMm/r = const.
+\end{equation}
+Now, if the sum at the vertex is zero or positive we have that
+\begin{equation}
+	\frac{1}{2}mv_0^2 \ge \frac{GMm}{r_0} \Rightarrow \frac{r_0v_0^2}{GM} \ge 2 \Rightarrow e \ge 1,
+\end{equation}
+and since $E_K \ge E_P$, the planet will escape. For the circular orbit, we recall from Equation (\ref{r3-T2}) that $F_G = F_C$, such that
+\begin{equation} \label{e=0}
+	\frac{mv_0^2}{r_0} = \frac{GMm}{r_0^2} \Rightarrow \frac{r_0 v_0^2}{GM} = 1 \Rightarrow e = 0.
+\end{equation}
+We note that in a circular orbit, $E_K = \frac{1}{2} E_P$.
 
 The last of Kepler's observations was that the planets move in their orbits such that the line joining it to the sun sweeps over equal areas in equal intervals of time, whatever the line's length. Again, see \cite{hibbeler2001}. This observation of constant \textit{areal velocity}, called Kepler's second law, can be written
 \begin{equation}
@@ -147,10 +159,28 @@ Now, the with cartesian representation of $\mathbf{a}_i$, we get the full set of
 	&z_{i+1} = z_i + hv_{z,i} ,\quad v_{z,i+1} = v_{z,i} - 4\pi^2h\frac{z_i}{r_i^3} ,\\
 \end{aligned}
 \end{equation}
-where $r_i = \sqrt{x_i^2 + y_i^2 + z_i^2}$.
+where $r_i = \sqrt{x_i^2 + y_i^2 + z_i^2}$. A framework of the algorithm is given in Listing \ref{lst:euler} below.
 
+\begin{lstlisting}[caption={Euler's Forward algorithm for Sun-Earth system with fixed Sun.},label={lst:euler}] [!ht]
+	// Declarations
+	n = "number of steps per year"
+	y = "years to calculate"
+	N = y*n  // total number of steps
+	h = 1.0/n  // time step length
+	array(3) position = "initial x,y,z"
+	array(3) velocity = "initial vx, vy, vz"
+	array(3) pos0  // for storing postion after update
+	
+	// Iterations
+	FOR i = 1...N DO
+		pos0 = position
+		position = position + h*velocity
+		r = norm(pos0)
+		velocity = velocity - h*4*pi^2/r^3*pos0
+	END DO
+\end{lstlisting}
 
-A problem with this method, though, is that it does not conserve energy, it is not symplectic \cite{notes-10-02}. A correction to this is possible with the small modification $x_{i+1} = x_i + hv_{x,i+1}$, known as the the \textit{Euler-Cromer method}. However, this too has a truncation error $O(h^2)$, which means that it quickly becomes too coarse or inefficient if we want to calculate long time spans with high precision. An alternative method, which is both energy conserving and more precise is the \textit{Velocity Verlet} method. Taking again the Taylor expansion for calculating the movement of a body along a straight line, we have
+A problem with Euler's Forward method, though, is that it does not conserve energy, it is not symplectic \cite{notes-10-02}. This can be shown by evaluating a few iterations. A correction to this energy leak is possible with the small modification $x_{i+1} = x_i + hv_{x,i+1}$, known as the the \textit{Euler-Cromer method}. However, this too has a truncation error $O(h^2)$, which means that it quickly becomes too coarse or inefficient if we want to calculate long time spans with high precision. An alternative method, which is both energy conserving and more precise is the \textit{Velocity Verlet} method. Taking again the Taylor expansion for calculating the movement of a body along a straight line, we have
 \begin{equation}
 \begin{aligned}
 	x(t+h) &= x(t) + hv(t) + \frac{h^2}{2}a(t) + O(h^3) \\
@@ -173,17 +203,55 @@ We see that we need $a(t+h)$ in order to calculate $v(t+h)$, which may not alway
 Discretizing as we did for Euler's Forward method, we get again the full set of equations for solving the problem of planetary movement about the Sun by the Velocity Verlet method, with the Sun fixed at the center:
 \begin{equation} \label{verlet}
 \begin{aligned}
-	&x_{i+1} = x_i - 2\pi^2h^2\frac{x_i}{r_i^3} , \quad v_{x,i+1} = v_{x,i} - 2\pi^2h \bigg(\frac{x_{i+1}}{r_{i+1}^3} + \frac{x_i}{r_i^3} \bigg) ,\\
-	&y_{i+1} = y_i - 2\pi^2h^2\frac{y_i}{r_i^3} , \quad v_{y,i+1} = v_{y,i} - 2\pi^2h \bigg(\frac{y_{i+1}}{r_{i+1}^3} + \frac{y_i}{r_i^3} \bigg) ,\\
-	&z_{i+1} = z_i - 2\pi^2h^2\frac{z_i}{r_i^3} , \quad v_{z,i+1} = v_{z,i} - 2\pi^2h \bigg(\frac{z_{i+1}}{r_{i+1}^3} + \frac{z_i}{r_i^3} \bigg) ,\\
+	&x_{i+1} = x_i + hv_{x,i} - 2\pi^2h^2\frac{x_i}{r_i^3} , \quad v_{x,i+1} = v_{x,i} - 2\pi^2h \bigg(\frac{x_{i+1}}{r_{i+1}^3} + \frac{x_i}{r_i^3} \bigg) ,\\
+	&y_{i+1} = y_i + hv_{y,i}- 2\pi^2h^2\frac{y_i}{r_i^3} , \quad v_{y,i+1} = v_{y,i} - 2\pi^2h \bigg(\frac{y_{i+1}}{r_{i+1}^3} + \frac{y_i}{r_i^3} \bigg) ,\\
+	&z_{i+1} = z_i + hv_{x,i}- 2\pi^2h^2\frac{z_i}{r_i^3} , \quad v_{z,i+1} = v_{z,i} - 2\pi^2h \bigg(\frac{z_{i+1}}{r_{i+1}^3} + \frac{z_i}{r_i^3} \bigg) ,\\
 \end{aligned}
 \end{equation}
-where $r_i = \sqrt{x_i^2 + y_i^2 + z_i^2}$.
+where $r_i = \sqrt{x_i^2 + y_i^2 + z_i^2}$. See Listing \ref{lst:verlet-nonOO} below for an algorithm framework.
 
-Comparing the Verlocity Verlet method with Euler's Forward method, we see that Euler's is more efficient with regards to FLOPs (FLoting point OPersations) per iteration. Euler needs one multiplication and one addition for each position $x_i, y_i, z_i$; plus two multiplications and one subtraction for each velocity $v_{x,i}, v_{y,i}, v_{z,i}$. 15 FLOPs in total. However, $r_i$ and the factor $r_i^{-3}$ must be calculated once per iteration. This involves square root and floating point divide operations, which are much more expensive than regular FLOPs and are not pipelined properly in the CPU \cite{hager2010introduction}. For Velocity Verlet, total number of FLOPs is $3+4=7$, and even if the method has both $r_i, r_i^{-3}$ and $r_{i+1}, r_{i+1}^{-3}$ terms, we store these between the iterations such that the most expensive operations are done only once.
+\begin{lstlisting}[caption={Velocity Verlet algorithm for Sun-Earth system with fixed Sun.},label={lst:verlet-nonOO}] [!ht]
+	// Declarations
+	n = "number of steps per year"
+	y = "years to calculate"
+	N = y*n  // total number of steps
+	h = 1.0/n  // time step length
+	array(3) position = "initial x,y,z"
+	array(3) velocity = "initial vx, vy, vz"
+	array(3) acceleration
+	array(3) acc0  // for storing acceleration after update
+	
+	// Initializing
+	r = norm(position)
+	acceleration = -4*pi^2/r^3*position
+	
+	// Iterations
+	FOR i = 1...N DO
+		position = position + h*velocity - h^2/2*acceleration
+		acc0 = acceleration
+		r = norm(pos0)
+		acceleration = -4*pi^2/r^3*position
+		velocity = velocity - h/2*(acceleration + acc0)
+	END DO
+\end{lstlisting}
+
+Comparing the Verlocity Verlet method with Euler's Forward method, we see that Euler's is more efficient with regards to FLOPs (FLoting point OPersations) per iteration. Euler needs one multiplication and one addition for each position $x_i, y_i, z_i$; plus two multiplications and one subtraction for each velocity $v_{x,i}, v_{y,i}, v_{z,i}$. 15 FLOPs in total. However, $r_i$ and the factor $r_i^{-3}$ must be calculated once per iteration. This involves square root and floating point divide operations, which are much more expensive than regular FLOPs and are not pipelined properly in the CPU \cite{hager2010introduction}. For Velocity Verlet, total number of FLOPs is $3+4=7$, and even if the method has both $r_i, r_i^{-3}$ and $r_{i+1}, r_{i+1}^{-3}$ terms, we store these between the iterations such that the most expensive operations are done only once, as we saw in Listing \ref{lst:verlet-nonOO}.
+
+CPU time for both Euler Forward and Velocity Verlet has a linear relation to problem size, as we see in Table \ref*{tab:cpu-time}. As expected, Euler is the fastest, but more than what we can explain by the FLOPs ratio between the algorithms. A possible explanation is the square root operations, which are bound to make trouble with pipelining. Another possibility is the use of \lstinline|C++ Armadillo| classes. In these completely CPU bound algorithms, these may cause some of the additional variables in Verlet to be stored outside of CPU register, meaning that they must be loaded from L1 cache.
+
+This speed advantage of Euler relative to Verlet is easily offset when we compare the accuracy between the two. As we see in Figure \ref{fig:verlet-euler}, which shows Earth in a circular orbit around the Sun over 100 years, Velocity Verlet is remarkably stable. Even for $n=100$ iteration steps per year, the accumulated error in the energy balance is on the order of $10^{-8}$. For Euler's Forward, we see a complete breakdown even at $n=1000$, partly stemming from its lower accuracy and partly from its non-symplecticity. 
+
+Figure \ref{fig:verlet-euler} also shows that the 1/2 relationship between kinetic and potential energy is conserved for the Verlet results, in accordance with Equation (\ref{e=0}) for eccentricity $e=0$. We also see that after 100 years, Verlet has lagged about 1/8th of a year for $n=100$, so to get good accuracy for long runs, we should use at least $n=1000$. In the following, we will limit our discussion to Velocity Verlet.
+
+\begin{figure}[!htb]
+	\centering
+	\includegraphics[width=1\linewidth]{verlet-euler.png}
+	\caption{Trace of 100 years of the Sun-Earth system with fixed Sun and circular orbit for the Velocity Verlet method to the left and Euler's Forward method to the right. Euler quickly breaks down due to low precision and energy leak, while Verlet has far superior accuracy for a 10th of the iteration steps. Verlet conserves energy with high accuracy even for $n=100$ steps per year, but will lag a bit unless $n$ is selected high enough.}
+	\label{fig:verlet-euler}
+\end{figure}
 
 \begin{table}[!ht]
-	\caption{Averaged CPU times for Euler's Forward and Velocity Verlet methods when solving the Sun-Earth system with fixed Sun. As could be expected, as soon as the pipelining reaches its full potential, scaling is perfect. The speed difference between the methods is somewhat surprising, though, since that cannot all be explained by the $7/5=1.4$ FLOPs ratio between them. Both methods are CPU-bound.}
+	\caption{Averaged CPU times for Euler's Forward and Velocity Verlet algorithms when solving the Sun-Earth system with fixed Sun. Each run is 1 year. As could be expected, as soon as the pipelining reaches its full potential, scaling is perfect. The speed difference between the methods is somewhat surprising, though, since that cannot all be explained by the $7/5=1.4$ FLOPs ratio between them. Both algorithms are CPU-bound. Results were obtained on an Intel i7-8550U CPU, with implementation  in \lstinline|C++| with \lstinline|Armadillo 10.1.0|.}
 	\label{tab:cpu-time}
 	\begin{center}
 		\begin{tabular}{rrrr}
@@ -204,12 +272,33 @@ Comparing the Verlocity Verlet method with Euler's Forward method, we see that E
 	\end{center}
 \end{table}
 
+\subsection{Solar System} \label{solar-system}
+We can extend the Velocity Verlet method in Equation (\ref{verlet}) to the general $n$-body system quite easily. Newton's gravitational law for the acceleration of a body 1 at location $\mathbf{r}_1$ towards a body 2 with mass $m_2$ at location $\mathbf{r}_2$ is given by 
+\begin{equation}
+	\mathbf{a}_{12} = \frac{Gm_2}{r_{12}^3} \mathbf{r}_{12} \quad , \quad \text{where} \quad \mathbf{r}_{12} = \mathbf{r}_{2} - \mathbf{r}_{1}.
+\end{equation}
+The total acceleration $\mathbf{a}_{1}$ of body 1 in an $n$-body problem is then simply the sum of the distance vectors to the other bodies, $\mathbf{r}_{1i}$, weighted by their masses $m_i$ over $r_{1i}^3$:
+\begin{equation}
+	\mathbf{a}_{1} = \sum_{i=2}^{n} \frac{Gm_i}{r_{1i}^3} \mathbf{r}_{1i}.
+\end{equation}
+
+As in the Sun-Earth system we then scale away the planet masses and the gravitational constant using $GM = 4 \pi^2$ AU$^3$/yr.$^2$, where $M$ is the Sun's mass, such that
+\begin{equation}
+	Gm_i = GM \cdot \frac{m_i}{M} = 4\pi^2 \cdot \frac{m_i}{M} = 4\pi^2 \cdot \mu_i.
+\end{equation}
+For planet $p$ we then get the following set of equations for solving the $n$-body problem using the Velocity Verlet method 
+\begin{equation} \label{verlet-n}
+\begin{aligned}
+	x_{i+1}^{(p)} &= x_i^{(p)} + hv_{x,i}^{(p)} - 2\pi^2h^2 \sum_{\substack{j=1  \\ j \neq p}}^{n} \frac{\mu_j x_i^{(pj)}}{(r_i^{(pj)})^3} \\
+	v_{x,i+1}^{(p)} &= v_{x,i}^{(p)} - 2\pi^2h \sum_{\substack{j=1  \\ j \neq p}}^{n} \bigg(\frac{\mu_j x_{i+1}^{(pj)}}{(r_{i+1}^{(pj)})^3} + \frac{\mu_j x_i^{(pj)}}{(r_i^{(pj)})^3} \bigg)	
+\end{aligned} \quad ,
+\end{equation}
+and correspondingly for the $y$ and $z$ axes.
+
+In effect, we need 6 equations per planet. There are 8 planets in the solar system, and counting the Sun and Pluto we have 60 equations to solve. Two strategies which each have their merit are an array-based strategy where we allocate an array of length $n$ for each variable, and keep track of the planets that way, or object orientation, which we will do here.
 
 
 
-
-
-\subsection{n-Body System} \label{n-body}
 
 \section{Results} \label{results}
 % - Present your results
@@ -219,12 +308,15 @@ Comparing the Verlocity Verlet method with Euler's Forward method, we see that E
 % - Make sure that figures and tables should contain enough information in their captions, axis labels etc so that an eventual reader can gain a first impression of your work by studying figures and tables only.
 
 
-
+Individual energies have less accuracy than the total.
 
 \section{Discussion and Conclusion} \label{conclusion}
 % - State your main findings and interpretations
 % - Try as far as possible to present perspectives for future work
 % - Try to discuss the pros and cons of the methods and possible improvements
+
+n=100 case has flown only (100-1/8) rounds vs 100 for n=1000, but energy is the same. What does that have to say for the energy?
+
 
 \clearpage
 \bibliographystyle{plain}
