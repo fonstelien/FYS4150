@@ -112,7 +112,7 @@ It would also be explained as a consequence of Newton's discoveries. The \textit
 \begin{equation}
 	\mathbf{L}_O = L_O\mathbf{e} = (mrv \sin \phi )\mathbf{e} = mr^2 \frac{d\theta}{dt} \mathbf{e} = 2m \frac{dA}{dt} \mathbf{e} = \text{\textit{const. vector}} \quad,
 \end{equation}
-where $\mathbf{e}$ is a unit vector.
+where $\mathbf{e}$ is a unit vector. We should note that a the conservation of angular momentum of a body holds for any trajectory, but that it's relation to Kepler's second law only holds for circular or closed elliptic orbits.
 
 \section{Numerical Methods for Celestial Mechanics} \label{methods}
 % - Describe the methods and algorithms
@@ -180,7 +180,7 @@ where $r_i = \sqrt{x_i^2 + y_i^2 + z_i^2}$. A framework of the algorithm is give
 	END DO
 \end{lstlisting}
 
-A problem with Euler's Forward method, though, is that it does not conserve energy, it is not symplectic \cite{notes-10-02}. This can be shown by evaluating a few iterations. A correction to this energy leak is possible with the small modification $x_{i+1} = x_i + hv_{x,i+1}$, known as the the \textit{Euler-Cromer method}. However, this too has a truncation error $O(h^2)$, which means that it quickly becomes too coarse or inefficient if we want to calculate long time spans with high precision. An alternative method, which is both energy conserving and more precise is the \textit{Velocity Verlet} method. Taking again the Taylor expansion for calculating the movement of a body along a straight line, we have
+A problem with Euler's Forward method, though, is that it does not conserve energy, it is not symplectic \cite{notes-10-02}. This can be shown by evaluating a few iterations. A correction to this energy drift is possible with the small modification $x_{i+1} = x_i + hv_{x,i+1}$, known as the the \textit{Euler-Cromer method}. However, this too has a truncation error $O(h^2)$, which means that it quickly becomes too coarse or inefficient if we want to calculate long time spans with high precision. An alternative method, which is both energy conserving and more precise is the \textit{Velocity Verlet} method. Taking again the Taylor expansion for calculating the movement of a body along a straight line, we have
 \begin{equation}
 \begin{aligned}
 	x(t+h) &= x(t) + hv(t) + \frac{h^2}{2}a(t) + O(h^3) \\
@@ -246,7 +246,7 @@ Figure \ref{fig:verlet-euler} also shows that the 1/2 relationship between kinet
 \begin{figure}[!htb]
 	\centering
 	\includegraphics[width=1\linewidth]{verlet-euler.png}
-	\caption{Trace of 100 years of the Sun-Earth system with fixed Sun and circular orbit for the Velocity Verlet method to the left and Euler's Forward method to the right. Euler quickly breaks down due to low precision and energy leak, while Verlet has far superior accuracy for a 10th of the iteration steps. Verlet conserves energy with high accuracy even for $n=100$ steps per year, but will lag a bit unless $n$ is selected high enough.}
+	\caption{Trace of 100 years of the Sun-Earth system with fixed Sun and circular orbit for the Velocity Verlet method to the left and Euler's Forward method to the right. Euler quickly breaks down due to low precision and energy drift, while Verlet has far superior accuracy for a 10th of the iteration steps. Verlet conserves energy with high accuracy even for $n=100$ steps per year, but will lag a bit unless $n$ is selected high enough.}
 	\label{fig:verlet-euler}
 \end{figure}
 
@@ -295,9 +295,103 @@ For planet $p$ we then get the following set of equations for solving the $n$-bo
 \end{equation}
 and correspondingly for the $y$ and $z$ axes.
 
-In effect, we need 6 equations per planet. There are 8 planets in the solar system, and counting the Sun and Pluto we have 60 equations to solve. Two strategies which each have their merit are an array-based strategy where we allocate an array of length $n$ for each variable, and keep track of the planets that way, or object orientation, which we will do here.
+As these over-crowded sub- and superscripts reveal, we need more than a few equations to completely describe an $n$-body system. There are 8 planets in the solar system, and counting the Sun and Pluto we have 60 equations to solve. To keep track of this all, we have two usual strategies which each have their merit. The first is an array-based scheme where we allocate an array of length $n$ for each variable, and keep track of the planets that way. This would probably be the most computationally efficient with regards to pipelining in the CPU. The other is object orientation, which is probably the simplest to implement, and which we will use here.
 
+In the object oriented approach, each planet and the Sun will be an object. The \lstinline|Planet| object should keeping its static data, limited to its mass relative to the Sun in this case, and keep the state of its position and velocity. It should also provide services which enable us to update the position and velocity states and let us query key properties which relate to this object only, like kinetic energy and angular momentum. An interface framework for implementing a \lstinline|Planet| object for the Velocity Verlet algorithm is given in Listing \ref{lst:verlet-planet-interface}.
 
+Having defined the \lstinline|Planet| object, we next define an object for keeping track of all the \lstinline|Planet|s and calling on their services for updating state. This \lstinline|Solver| object should thus provide a data structure for keeping the \lstinline|Planet| collection as well as services to add \lstinline|Planet|s to the collection and initiating the Velocity Verlet algorithm. It should also provide services which let us query key properties which extend beyond the single \lstinline|Planet| object, like potential energy, as well as total energies and angular momentum. See Listing \ref{verlet-solver-interface} for an interface framework.
+
+The only interesting service to take a closer look at in the \lstinline|Solver| object is \lstinline|solve()|. The Velocity Verlet algorithm is executed in much the same way as for the Sun-Earth case in Listing \ref{lst:verlet-nonOO}, but extended to looping over all \lstinline|Planet|s. See Listing \ref{lst:solve} for a framework.
+
+We test our object-oriented model on the Solar System. To get a stable solution, we need to ensure that the initial positions and velocities of the planets correspond to zero total momentum and where the total kinetic and potential energies correspond to closed elliptic orbits. \textit{NASA Jet Propulsion Laboratory} \cite{nasa-jpl} publishes highly accurate live data on the position and velocity of the objects in the Solar system, which we use to build our model. 
+
+Figure \ref{fig:solar-system} shows a simulation of the Sun and the planets in the Solar System over 250 years, which is a little over 1 rotation for Pluto (included even if strictly not defined as a planet). The model reproduces the elliptic orbits and preserves energy and angular momentum. We also recognize the partly overlapping orbits of Neptune and Pluto.
+
+\begin{lstlisting}[caption={Planet object interface for Velocity Verlet algorithm solving the $n$-body problem.},label={lst:verlet-planet-interface}] [!ht]
+	BEGIN OBJECT Planet
+		// Static data
+		mass  // mass relative to the Sun
+		
+		// Object state
+		array(3) position
+		array(3) velocity
+		array(3) acceleration
+		array(3) acc0  // for storing acceleration after position update
+		
+		// Services to update state
+		update_position(dt)  // dt is time step size
+		update_velocity(dt)  
+		update_acceleration(other_planet)  // call once for each other object
+		
+		// Services to query properties
+		kinetic_energy()
+		angular_momentum()
+	END OBJECT
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Solver object interface for keeping track of the \lstinline|Planet| objects in the $n$-body problem, and manage the update of their state.},label={lst:verlet-solver-interface}] [!ht]
+	BEGIN OBJECT Solver
+		// Object state
+		collection planets  // collection of Planet objects
+		
+		// Services to update state
+		add(new_planet)  // adds new Planet object to collection
+		solve(N, dt)  // N is number of iterations; dt is time step
+		
+		// Services to query properties
+		potential_energy(planet)  // total potential energy of planet
+		total_potential_energy()  // total potential energy of all planets
+		total_kinetic_energy()  // total kinetic energy of all planets
+		total_angular_momentum()  // total angular momentum of all planets
+	END OBJECT
+\end{lstlisting}
+
+\begin{lstlisting}[caption={The \lstinline|Solver| object's solve() service for executing the Velocity Verlet algorithm on the $n$-body problem.},label={lst:solve}] [!ht]
+	BEGIN FUNCTION solve(N, dt)
+		global collection planets  // collection of Planet objects
+		num_planets  // number of planets in collection planets
+		
+		// Initializing acceleration
+		FOR i = 1...num_planets DO
+			planet1 = planets[i]
+			FOR j = (i+1)...num_planets DO
+				planet2 = planets[j]
+				planet1.update_acceleration(planet2)
+				planet2.update_acceleration(planet1)
+			END DO
+		END DO
+		
+		// Iterations
+		FOR n = 1...N DO
+			// Update position
+			FOR i = 1...num_planets DO
+				planets[i].update_position(dt)
+			END DO
+			
+			// Update acceleration at new position
+			FOR i = 1...num_planets DO
+				planet1 = planets[i]
+				FOR j = (i+1)...num_planets DO
+					planet2 = planets[j]
+					planet1.update_acceleration(planet2)
+					planet2.update_acceleration(planet1)
+				END DO
+			END DO
+			
+			// Update velocity
+			FOR i = 1...num_planets DO
+				planets[i].update_velocity(dt)
+			END DO
+		END DO
+	END FUNCTION
+\end{lstlisting}
+
+\begin{figure}[!htb]
+	\centering
+	\includegraphics[width=1\linewidth]{solar-system.png}
+	\caption{Solar system simulated using our object-oriented Velocity Verlet solver, with 1000 iterations per year over 250 years (a little more than 1 rotation for Pluto). Simulation was run with non-fixed Sun. We see that the model reproduces distinct elliptic orbits of the planets, but that for the innermost planets, which are rotating fastest, the ellipses are not completely closed (left). To the right, we see that the model preserves energy and total angular momentum with high accuracy. \% annotations are deviations from the mean over the full time period, and planetary units are on a Sun mass-AU-year base. Initial states collected from \cite{nasa-jpl}, with states as of 2020-Oct-15 at 00:00:00.0000.}
+	\label{fig:solar-system}
+\end{figure}
 
 
 \section{Results} \label{results}
@@ -306,9 +400,38 @@ In effect, we need 6 equations per planet. There are 8 planets in the solar syst
 % - Relate your work to other calculations/studies
 % - An eventual reader should be able to reproduce your calculations if she/he wants to do so. All input variables should be properly explained.
 % - Make sure that figures and tables should contain enough information in their captions, axis labels etc so that an eventual reader can gain a first impression of your work by studying figures and tables only.
+After having developed a solver for the $n$-body problem in the former section, we may now investigate how planetary orbits are affected by other planets, eccentricity and its dependence on the exact form of Newton's gravitational law. But before that, let us take a look at Velocity Verlet's stability.
+
+\subsection{Stability of the Velocity Verlet Method}
+In Figures \ref{fig:verlet-euler} and \ref{fig:verlet-euler} we saw that the accuracy of the energy balance and angular momentum is high even for relatively low $n$. The explanation for that is the $O(h^3)$ truncation error of the Velocity Verlet method. However, as we see in Figure \ref{fig:error}, we may not assume that the position and velocity accuracies are constant in the three-dimensional space. In the example shown in the left and middle of Figure \ref{fig:error}, Earth is rotated once about the Sun in a circular orbit starting at $(x,y,z)=(1,0,0)$, with various time step. We see that both the error in the position and in the velocity varies with rotational angle $\theta$, but again that the sum of the error, when translated to energy, zeros out.
+
+To the right in Figure \ref{fig:error}, a planet is put at $(x,y,z)=(1,0,0)$ with at stand still, and we see the error in the velocity as it accelerates against the Sun. As the planet moves towards the sun, the error in the velocity grows steeply. When the planet is close to the sun, at some point the $hv_{x,i}$ term in $x_{i+1}$ may also cause a step-through of the gravitational center, causing a discontinuity. The result is that the planet shoots off into space.
+
+\begin{figure}[!htb]
+	\centering
+	\includegraphics[width=1\linewidth]{error.png}
+	\caption{Relative error of the Velocity Verlet algorithm depending on location for various time steps. To the left we see the error in the position for Earth following a circular orbit of radius 1.0. Start conditions were \lstinline|pos = \{1.0, 0.0, 0.0\}| and \lstinline|vel = \{0.0, 2*PI, 0.0\}|, and the simulation is run for 1.0 rotation. In the middle we see the same, but for the velocity. We see that the kinetic and potential energy error cancel each outher out. To the right we see the velocity error of a planet accelerating from standstill towards the sun. Close to the sun, the Velocity Verlet method becomes unstable. Start conditions were \lstinline|pos = \{1.0, 0.0, 0.0\}| and \lstinline|vel = \{0.0, 0.0, 0.0\}| with fixed sun.}
+	\label{fig:error}
+\end{figure}
+
+\subsection{Kepler's Second Law and Conservation of Angular Momentum: A Super Massive Jupiter}
 
 
-Individual energies have less accuracy than the total.
+
+\begin{figure}[!htb]
+	\centering
+	\includegraphics[width=1\linewidth]{massive-jupiter.png}
+	\caption{Sun-Earth-Jupiter system with varying sizes of Jupiter. In the top row we see the Earth's worsening orbit for increasing mass of Jupiter, before Earth's orbit completely breaks down. In the middle row we see that up until 100x Jupiter mass, Earth's angular momentum is kept constant while the energy balance becomes visibly distorted, although still small (note to $10^{-5}$ Sun-masses-AU-year scaling). For 1000x Jupiter mass, everything breaks down when Earth comes close to first the Sun, and then starts swirling around Jupiter, before it takes off into space. In the bottom row, we see the total error in the system's total energy balance and angular momentum, relative to the initial values. Again, note the scaling. We see that both quantities are conserved until 100x Jupiter. At 1000x Jupiter the balance is off, considering Earth's small size relative to the others. Start conditions for Earth were \lstinline|pos = \{1.0, 0.0, 0.0\}| and \lstinline|vel = \{0.0, 2*PI, 0.0\}|, and for Jupiter \lstinline|pos = \{-5.2, 0.0, 0.0\}| and \lstinline|vel = \{0.0, -2*PI/SQRT(5.2), 0.0\}|, giving both a counter-clockwise circular rotation. Sun was fixed.}
+	\label{fig:massive-jupiter}
+\end{figure}
+
+\subsection{Kepler's Third Law: Eccentricity and Forms of the Force}
+
+
+\subsection{General Relativity: The Perihelion Precession of Mercury}
+
+
+Individual EK, EP energies have less accuracy than the total.
 
 \section{Discussion and Conclusion} \label{conclusion}
 % - State your main findings and interpretations
@@ -317,6 +440,7 @@ Individual energies have less accuracy than the total.
 
 n=100 case has flown only (100-1/8) rounds vs 100 for n=1000, but energy is the same. What does that have to say for the energy?
 
+Suggestions: let sun move in z direction, simulate the forming of a plane structure if planets spread in the z dir. what happens if the sun suddenly disappears. how about twin-star sun? sudden, slow arrival of a jupiter-sized planet from outer space. investigate differences between radial vs circular accuracy, important for the Ek+Ep conservation. In Fig1 seems like movement is slower than velocity, since kinetic energy is preserved, but distance traveled is 1/8th of a rotation short.
 
 \clearpage
 \bibliographystyle{plain}

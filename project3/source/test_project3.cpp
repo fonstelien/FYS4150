@@ -68,8 +68,8 @@ TEST_CASE("Euler energy and position tests", "[euler-tests]") {
 }
 
 
-TEST_CASE("System potential, kinetic energy; angular momentum", "[sys-pot-kin-mom]") {
-  int n = 100000;
+TEST_CASE("Earth-Sun potential, kinetic energy; angular momentum", "[earth-sun-pot-kin-mom]") {
+  int n = 10000;
   double h = 1./n;
   vec pos(3), vel(3);
   double ep0, ep, ek0, ek, am0, am;
@@ -82,31 +82,31 @@ TEST_CASE("System potential, kinetic energy; angular momentum", "[sys-pot-kin-mo
   pos = {1.,0.,0.};
   vel = {0.,5.,0.};  // elliptic orbit
   Planet earth = Planet(3.0E-6, pos, vel);
-
+  
   Solver solver;
   solver.add(&sun);
   solver.add(&earth);
-
-  ep0 = solver.potential_energy(&earth, &sun);
+  
+  ep0 = solver.potential_energy(&earth);
   ek0 = earth.kinetic_energy();
   am0 = earth.angular_momentum();
-
+  
   solver.solve(n/3, h);
-  ep = solver.potential_energy(&earth, &sun);
+  ep = solver.potential_energy(&earth);
   ek = earth.kinetic_energy();
   am = earth.angular_momentum();
   REQUIRE(ep+ek == Approx(ep0+ek0).epsilon(1.0E-3));
   REQUIRE(am == Approx(am0).epsilon(1.0E-6));
 
   solver.solve(n/3, h);
-  ep = solver.potential_energy(&earth, &sun);
+  ep = solver.potential_energy(&earth);
   ek = earth.kinetic_energy();
   am = earth.angular_momentum();
   REQUIRE(ep+ek == Approx(ep0+ek0).epsilon(1.0E-3));
   REQUIRE(am == Approx(am0).epsilon(1.0E-6));
 
   solver.solve(n/3, h);
-  ep = solver.potential_energy(&earth, &sun);
+  ep = solver.potential_energy(&earth);
   ek = earth.kinetic_energy();
   am = earth.angular_momentum();
   REQUIRE(ep+ek == Approx(ep0+ek0).epsilon(1.0E-3));
@@ -136,28 +136,68 @@ TEST_CASE("Forms of the force", "[forms-of-the-force]") {
   n = (int) n * .26;
   solver.beta = 3.0;
   
-  ep0 = solver.potential_energy(&earth, &sun);
+  ep0 = solver.potential_energy(&earth);
   ek0 = earth.kinetic_energy();
   am0 = earth.angular_momentum();
 
   solver.solve(n/3, h);
-  ep = solver.potential_energy(&earth, &sun);
+  ep = solver.potential_energy(&earth);
   ek = earth.kinetic_energy();
   am = earth.angular_momentum();
   REQUIRE(ep+ek == Approx(ep0+ek0).epsilon(1.0E-3));
   REQUIRE(am == Approx(am0).epsilon(1.0E-6));
 
   solver.solve(n/3, h);
-  ep = solver.potential_energy(&earth, &sun);
+  ep = solver.potential_energy(&earth);
   ek = earth.kinetic_energy();
   am = earth.angular_momentum();
   REQUIRE(ep+ek == Approx(ep0+ek0).epsilon(1.0E-3));
   REQUIRE(am == Approx(am0).epsilon(1.0E-6));
 
   solver.solve(n/3, h);
-  ep = solver.potential_energy(&earth, &sun);
+  ep = solver.potential_energy(&earth);
   ek = earth.kinetic_energy();
   am = earth.angular_momentum();
   REQUIRE(ep+ek == Approx(ep0+ek0).epsilon(1.0E-3));
   REQUIRE(am == Approx(am0).epsilon(1.0E-6));
+}
+
+
+TEST_CASE("Solar System potential, kinetic energy; angular momentum", "[solar-pot-kin-mom]") {
+  int n = 1000;
+  double h = 1./n;
+  double ep0, ep, ek0, ek, am0, am;
+  mat system;
+  Solver solver;
+  string fname = "celestial_input.csv";
+
+  system.load(fname, csv_ascii);
+  solver.build(system);
+    
+  ep0 = solver.total_potential_energy();
+  ek0 = solver.total_kinetic_energy();
+  am0 = solver.total_angular_momentum();
+  
+  solver.solve(n/3, h);
+  ep = solver.total_potential_energy();
+  ek = solver.total_kinetic_energy();
+  am = solver.total_angular_momentum();
+  REQUIRE(ep+ek == Approx(ep0+ek0).epsilon(2.0E-2));
+  REQUIRE(am == Approx(am0).epsilon(1.0E-6));
+
+  solver.solve(n/3, h);
+  ep = solver.total_potential_energy();
+  ek = solver.total_kinetic_energy();
+  am = solver.total_angular_momentum();
+  REQUIRE(ep+ek == Approx(ep0+ek0).epsilon(2.0E-2));
+  REQUIRE(am == Approx(am0).epsilon(1.0E-6));
+
+  solver.solve(n/3, h);
+  ep = solver.total_potential_energy();
+  ek = solver.total_kinetic_energy();
+  am = solver.total_angular_momentum();
+  REQUIRE(ep+ek == Approx(ep0+ek0).epsilon(2.0E-2));
+  REQUIRE(am == Approx(am0).epsilon(1.0E-6));
+
+  solver.nuke();  
 }

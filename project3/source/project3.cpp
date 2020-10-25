@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
       stability = true;
       continue;
     case 'n':
-      n = atoi(optarg);
+      n = (long long int) atoi(optarg);
       dt = 1./n;
       continue;
     case 'y':
@@ -106,8 +106,8 @@ int main(int argc, char **argv) {
     }
   }
 
-  // Set number of steps to years times number of steps per year, +1 for the initial state
-  n = (int) n*years + 1;
+  // Set number of steps to years times number of steps per year
+  n = (long long int) n*years;
 
   // Run simulation
   switch (mode) {
@@ -157,18 +157,14 @@ int main(int argc, char **argv) {
 
       am0 = earth.angular_momentum();
       ek0 = earth.kinetic_energy();
-      ep0 = solver.potential_energy(&earth, &sun);
-      if (include_jupiter)
-	ep0 += solver.potential_energy(&earth, &jupiter);
+      ep0 = solver.potential_energy(&earth);
 
       solver.beta = beta;
       solver.solve(n, dt);
 
       am = earth.angular_momentum();
       ek = earth.kinetic_energy();
-      ep = solver.potential_energy(&earth, &sun);
-      if (include_jupiter)
-	ep += solver.potential_energy(&earth, &jupiter);
+      ep = solver.potential_energy(&earth);
 
       if (stability) {
 	cout << "ek0+ep0,ek+ep,am0,am" << endl;

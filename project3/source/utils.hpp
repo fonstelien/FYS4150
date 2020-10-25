@@ -58,7 +58,10 @@ public:
   void add(Planet *planet);  // add planet to collection
   void build(mat system);  // builds system from system
   void nuke();  // frees Planets pointed to by planets and clear()s the vector
-  void solve(int steps, double dt);  // run simulation with num. steps, time step dt
+  void solve(long long int steps, double dt);  // solve with num. steps, time step dt
   string csv_header();  // returns csv format header for the flight_log
-  double potential_energy(Planet *p1, Planet *p2);  // potential energy between p1 and p2
+  double potential_energy(Planet *planet);  // total potential energy of Planet planet
+  double total_potential_energy();  // total potential energy in the system
+  double total_kinetic_energy();  // total kinetic energy in the system
+  double total_angular_momentum();  // total angular momentum in the system
 };

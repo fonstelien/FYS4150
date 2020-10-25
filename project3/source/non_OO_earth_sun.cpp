@@ -17,7 +17,7 @@ void initialize_earth_circular_trajectory(vec &pos, vec &vel) {
 /* Runs forward euler with earth in circular orbit and logs */
 /* trajectory and velocity in flight_log. Calculations in xy plane only. */
 mat earth_circular_fwd_euler(double h, int n) {
-  mat flight_log(n,4);
+  mat flight_log(n+1,4);
   vec pos0(2), pos(2), vel(2);
   double r;
   
@@ -27,7 +27,7 @@ mat earth_circular_fwd_euler(double h, int n) {
   flight_log(0,2) = vel(0);
   flight_log(0,3) = vel(1);
 
-  for (int i = 1; i < n; i++) {
+  for (int i = 1; i < n+1; i++) {
     pos0 = pos;
     pos += h*vel;
     r = norm(pos0);
@@ -46,7 +46,7 @@ mat earth_circular_fwd_euler(double h, int n) {
 /* Runs Velocity Verlet with earth in circular orbit and logs */
 /* trajectory and velocity in flight_log. Calculations in xy plane only. */
 mat earth_circular_verlet(double h, int n) {
-  mat flight_log(n,4);
+  mat flight_log(n+1,4);
   vec pos(2), vel(2), acc0(2), acc(2);
   double r;
   
@@ -60,7 +60,7 @@ mat earth_circular_verlet(double h, int n) {
   r = norm(pos);
   acc = -FPS/(r*r*r)*pos;
 
-  for (int i = 1; i < n; i++) {
+  for (int i = 1; i < n+1; i++) {
     pos += h*vel + h*h/2*acc;
     acc0 = acc;
     r = norm(pos);
