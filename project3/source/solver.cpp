@@ -156,7 +156,7 @@ double Solver::potential_energy(Planet *planet) {
       continue;
     
     r = norm(planet->pos - other->pos);
-    ep += -.5*FPS*planet->m*other->m/(beta-1)/pow(r, beta-1);
+    ep += -FPS*planet->m*other->m/(beta-1)/pow(r, beta-1);
   }
 
   return ep;
@@ -170,7 +170,7 @@ double Solver::total_potential_energy() {
   for (int i = 0; i < (int) planets.size(); i++)
     ep += potential_energy(planets[i]);
 
-  return ep;
+  return .5*ep;  // multiply with one half to avoid counting energy twice
 }
 
 
