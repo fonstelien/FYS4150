@@ -43,30 +43,33 @@
 % - What have you done to solve this 
 % - Main Results 
 % - The implications
+Analytic solutions to $n$-body gravitational problems are only possible in rare exceptions or with simplifications for $n \ge 3$. To study these problems we therefore need efficient and accurate numerical methods. In this report we investigate the Velocity Verlet method, which has a truncation error $O(h^3)$, and which, with 7 FLOPs per axis and iteration, is numerically efficient. Crucially, this method is also symplectic (energy conserving). We develop an object-oriented solver which we verify by reproducing the orbits of the Solar System, and use it to conduct numerical experiments. 
 
+For circular orbits, the Velocity Verlet method gives reliable results for $10^2$-$10^3$ integration points per rotation, while for elliptic orbits, $10^3$-$10^4$ should be used. Mechanical energy and angular momentum are conserved with high accuracy, with relative error often down to $10^{-6}$ if the orbits are stable. However, accuracy is dependent on angular and radial position, and is different for position and velocity. Conservation of energy and angular momentum serves as a reliable indicator of numerical stability.
 
+The numerical experiments in this report show Earth's fluctuating orbit when simulated in a Sun-Earth-Jupiter system with various masses of Jupiter. With Jupiter at 100 times it's actual mass, Earth's orbit is stable, but fluctuates in a band approximately 0.15-0.20 AU wide. At 1000 times its actual mass, Earth leaves its orbit around the Sun and starts to swirl around Jupiter. We also show that the model correctly predicts orbit eccentricity, and that closed elliptic orbits are a feature of the inverse-square radius to force relationship in Newton's gravitational law. Conservation of mechanical energy and angular momentum is still preserved in this alternate domain, however. Our model also correctly reproduces the perihelion precession of Mercury at 43 arc seconds per century when we introduce a general relativistic correction to Newton's gravitational law. This requires a very high accuracy, at $10^7$ integration points per rotation. The error of the reference calculation without the general relativistic error is 0.22 arc seconds per century.
+
+Visit my GitHub repository at \url{https://github.com/fonstelien/FYS4150/tree/master/project3} for source code and raw data from the numerical simulations.
 \end{abstract}
 
 
 \section{Introduction} \label{intro}
 %When you write the introduction you could focus on the following aspects
 % - Motivate the reader, the first part of the introduction gives always a motivation and tries to give the overarching ideas
-For all its beauty, the limits of differential calculus quickly becomes apparent when it comes to the study of planetary movements. The classic $n$-body problem for describing the movement of bodies in interacting gravitational fields can be perfectly accounted for with closed form for $n=2$, but problems arise already at $n=3$. Hence the need for numerical methods, and in this report we will develop an $n$-body \textit{solver} based on the \textit{Velocity Verlet} algorithm \cite{fys4150-notes}. 
+For all its beauty, the limits of differential calculus quickly becomes apparent when it comes to the study of planetary movements. The classic $n$-body problem for describing the movement of bodies in interacting gravitational fields can be perfectly accounted for at $n=2$, but problems arise already at $n=3$. Hence the need for numerical methods.
 
 % - What I have done
+In this report we will develop an $n$-body \textit{solver} for gravitational problems based on the \textit{Velocity Verlet} algorithm \cite{fys4150-notes}. We will use the solver to perform numerical experiments to answer questions about how a planet's orbit around the Sun is affected by the presence of other planets, how the orbit would be affected by a \textit{change} in Newton's gravitational law, and what this tells us about the \textit{accuracy} of that law. We will also touch on general relativity when we reproduce the perihelion precession of Mercury with high accuracy, a famous test of general relativity \cite{fys4150-p3}. The validity of the results must always be validated against the preservation of energy and angular momentum, which we keep a keen eye on all along.
+
 % - The structure of the report, how it is organized etc
-Lets first revisit some of the basics of celestial mechanics, which will serve as a mathematical background for our development of the algorithms.
+Section \ref{methods} starts by looking at the most basic numerical method of all for solving differential equations involving the movement;  Euler's forward method. Then we introduce the Velocity Verlet method and see how it outperforms Euler's even if computationally more demanding. We also give a framework for an object-oriented implementation of the Velocity Verlet algorithm. Then, in Section \ref{results}, we investigate our model's performance and present the results of the experiments, before discussing their interpretation and wrapping up with some suggestions for further studies in Section \ref{conclusion}. But first, in the next section, let us revisit some of the basics of celestial mechanics, which will serve as the mathematical background for the testing of the algorithms and the interpretation of the results.
 
-
-
-
-
-\section{Background: Celestial Mechanics} \label{celestial-mechanics}
-It was \textit{Johannes Kepler} (1571-1630) who first described the planets' orbits correctly. By observation he found that all planets move in elliptic orbits with the sun at one of the two foci; and that the square of their periods $T$ are directly proportional to the cube of their semi-major axis $a$ \cite{hibbeler2001} (Kepler's first and third laws, respectively). Perfect harmony prevailed, it seemed:
+\section{Celestial Mechanics: Kepler and Newton's Laws} \label{celestial-mechanics}
+It was \textit{Johannes Kepler} (1571-1630) who first described the planets' orbits correctly. By observation, he found that all planets move in elliptic orbits with the sun at one of the two foci; and that the square of their periods $T$ are directly proportional to the cube of their semi-major axis $a$ \cite{hibbeler2001} (Kepler's first and third laws, respectively);
 \begin{equation}
 	T^2 \propto a^3.
 \end{equation}
-Later, \textit{Isaac Newton} (1642-1727) would describe with his gravitational law the mutual attractive force $F_G$ between two bodies of mass $M, m$ at distance $r$ apart as
+Perfect harmony prevailed, it seemed. Later, \textit{Isaac Newton} (1642-1727) would describe with his gravitational law the mutual attractive force $F_G$ between two bodies of mass $M, m$ at distance $r$ apart as
 \begin{equation} \label{newton-grav}
 	F_G = \frac{GMm}{r^2},
 \end{equation}
@@ -106,31 +109,31 @@ We note that in a circular orbit, $E_K = \frac{1}{2} E_P$.
 
 The last of Kepler's observations was that the planets move in their orbits such that the line joining it to the sun sweeps over equal areas in equal intervals of time, whatever the line's length. Again, see \cite{hibbeler2001}. This observation of constant \textit{areal velocity}, called Kepler's second law, can be written
 \begin{equation}
-	\frac{dA}{dt} = \frac{1}{2} r^2 \frac{d\theta}{dt} = const. \quad.
+	\frac{dA}{dt} = \frac{1}{2} r^2 \frac{d\theta}{dt} = const.
 \end{equation}
-It would also be explained as a consequence of Newton's discoveries. The \textit{angular momentum} of a body with mass $m$ moving at velocity $\mathbf{v}$ at distance $\mathbf{r}$ from a fixed point $O$ is defined as $\mathbf{L}_O = \mathbf{r} \times m\mathbf{v}$. Now, with $\mathbf{r}$ and $\mathbf{v}$ at an angle $\phi$ to each other, $|\mathbf{r} \times \mathbf{v}| = rv \sin \phi$; and the component of $\mathbf{v}$ perpendicular to $\mathbf{r}$ is the body's velocity on a circular path about $O$, so $v \sin \phi = r \frac{d\theta}{dt}$. Bringing this all together, we get that Kepler's second law foresaw the conservation of angular momentum:
+This would also be explained as a consequence of Newton's discoveries. The \textit{angular momentum} of a body with mass $m$ moving at velocity $\mathbf{v}$ at distance $\mathbf{r}$ from a fixed point $O$ is defined as $\mathbf{L}_O = \mathbf{r} \times m\mathbf{v}$. Now, with $\mathbf{r}$ and $\mathbf{v}$ at an angle $\phi$ to each other, $|\mathbf{r} \times \mathbf{v}| = rv \sin \phi$; and the component of $\mathbf{v}$ perpendicular to $\mathbf{r}$ is the body's velocity on a circular path about $O$, so $v \sin \phi = r \frac{d\theta}{dt}$. Bringing this all together, we get that Kepler's second law foresaw the conservation of angular momentum:
 \begin{equation}
 	\mathbf{L}_O = L_O\mathbf{e} = (mrv \sin \phi )\mathbf{e} = mr^2 \frac{d\theta}{dt} \mathbf{e} = 2m \frac{dA}{dt} \mathbf{e} = \text{\textit{const. vector}} \quad,
 \end{equation}
-where $\mathbf{e}$ is a unit vector. We should note that a the conservation of angular momentum of a body holds for any trajectory, but that it's relation to Kepler's second law only holds for circular or closed elliptic orbits.
+where $\mathbf{e}$ is a unit vector. We should note that the conservation of angular momentum of a body holds for any trajectory, but that it's relation to Kepler's second law only holds for circular or closed elliptic orbits.
 
 \section{Numerical Methods for Celestial Mechanics} \label{methods}
 % - Describe the methods and algorithms
 % - You need to explain how you implemented the methods and also say something about the structure of your algorithm and present some parts of your code
 % - You should plug in some calculations to demonstrate your code, such as selected runs used to validate and verify your results. The latter is extremely important!! A reader needs to understand that your code reproduces selected benchmarks and reproduces previous results, either numerical and/or well-known closed form expressions.
 
-We will start with developing a solver for the simplified 2-body problem with a fixed Sun at the center and a planet moving around it. We will use this for proving the correctness our algorithm, as well as studying its efficiency with regards to CPU time and accuracy. Then, we will proceed to solving the general $n$-body problem in an object-oriented manner. At the end of this section, we briefly discuss the inclusion of a general relativistic factor for calculating the slow rotation of the perihelion of Mercury.
+We will start with developing a solver for the simplified 2-body problem with a fixed Sun at the center and a planet moving around it. We will use this for proving the correctness our algorithm, as well as studying its efficiency with regards to CPU time and accuracy. Then, we will proceed to solving the general $n$-body problem in an object-oriented manner. 
 
 \subsection{Sun-Earth System with Fixed Sun} \label{sun-earth}
-The location at time $t+h$ of an body moving along a straight line with non-constant velocity $v = v(t)$, is given by the Taylor expansion
+The position at time $t+h$ of a body moving along a straight line with velocity $v = v(t)$, is given by the Taylor expansion
 \begin{equation}
 	x(t+h) = x(t) + hv(t) + O(h^2),
 \end{equation}
-where $O(h^2)$ is the truncation error. The velocity $v(t+h)$ at the new position $x(t+h)$, is again given by a new Taylor series
+where $O(h^2)$ is the truncation error. The velocity $v(t+h)$ at the new position $x(t+h)$, is again given by a new Taylor expansion
 \begin{equation}
-	v(t+h) = v(t) + h \frac{dv}{dt}(t) + O(h^2) \quad \text{, where} \quad \frac{dv}{dt}(t) = a(t).
+	v(t+h) = v(t) + h \frac{dv}{dt}(t) + O(h^2) \text{, where} \quad \frac{dv}{dt}(t) = a(t).
 \end{equation}
-We discretize time in the time interval $[t, t + \Delta t]$ by letting $t_i = t + ih$, where $i \in [0,n]$ and $h = \Delta t/n$. We then get the discrete equations for the body's motion as
+We discretize time in the time interval $[t, t + \Delta t]$ by letting $t_i = t + ih$, where $i \in [0,n]$ and $h = \Delta t/n$. The discrete equations for the body's motion are then given as
 \begin{equation}
 \begin{aligned}
 	x_{i+1} &= x_i + hv_i \\
@@ -139,9 +142,9 @@ We discretize time in the time interval $[t, t + \Delta t]$ by letting $t_i = t 
 \end{equation}
 
 
-With these equations, called \textit{Euler's forward method}, we can can iteratively calculate the object's movement along the $x$ axis, and expanding to three dimensions yields corresponding equations for movement along the $y$ and $z$ axes. 
+With these equations, called \textit{Euler's forward method}, we can can iteratively calculate the object's movement along the $x$ axis. These are expanded to three dimensions with corresponding equations for movement along the $y$ and $z$ axes. 
 
-To apply Euler's forward method on Newton's gravitational law (\ref{newton-grav}), we must plug in Newton's gravitational law (\ref{newton-grav}) for the acceleration. On vector form and in spherical coordinates the acceleration is given as
+To apply Euler's forward method on Newton's gravitational law (\ref{newton-grav}), we plug in Equation (\ref{newton-grav}) for the acceleration. On vector form and in spherical coordinates the acceleration is given as
 \begin{equation} \label{a-spherical}
 	\mathbf{a}_i = \frac{GM}{r_i^3} \mathbf{r}_i.
 \end{equation}
@@ -151,7 +154,7 @@ where $M$ is the mass of the attracting body. In the Solar System it is convenie
 \end{equation}
 
 
-Now, the with cartesian representation of $\mathbf{a}_i$, we get the full set of forward Euler equations in three dimensions for solving the problem of planetary movement about the Sun, where the Sun is kept fixed at the center:
+Now, the with cartesian representation of $\mathbf{a}_i$, we get the full set of forward Euler equations in three dimensions for solving the problem of planetary movement about the Sun, where the Sun is kept fixed at the center;
 \begin{equation} \label{euler-fwd}
 \begin{aligned}
 	&x_{i+1} = x_i + hv_{x,i} ,\quad v_{x,i+1} = v_{x,i} - 4\pi^2h\frac{x_i}{r_i^3} ,\\
@@ -235,7 +238,7 @@ where $r_i = \sqrt{x_i^2 + y_i^2 + z_i^2}$. See Listing \ref{lst:verlet-nonOO} b
 	END DO
 \end{lstlisting}
 
-Comparing the Verlocity Verlet method with Euler's Forward method, we see that Euler's is more efficient with regards to FLOPs (FLoting point OPersations) per iteration. Euler needs one multiplication and one addition for each position $x_i, y_i, z_i$; plus two multiplications and one subtraction for each velocity $v_{x,i}, v_{y,i}, v_{z,i}$. 15 FLOPs in total. However, $r_i$ and the factor $r_i^{-3}$ must be calculated once per iteration. This involves square root and floating point divide operations, which are much more expensive than regular FLOPs and are not pipelined properly in the CPU \cite{hager2010introduction}. For Velocity Verlet, total number of FLOPs is $3+4=7$, and even if the method has both $r_i, r_i^{-3}$ and $r_{i+1}, r_{i+1}^{-3}$ terms, we store these between the iterations such that the most expensive operations are done only once, as we saw in Listing \ref{lst:verlet-nonOO}.
+Comparing the Verlocity Verlet method with Euler's Forward method, we see that Euler's is more efficient with regards to FLOPs (FLoting point OPersations) per iteration. Euler needs one multiplication and one addition for each position $x_i, y_i, z_i$; plus two multiplications and one subtraction for each velocity $v_{x,i}, v_{y,i}, v_{z,i}$. 15 FLOPs in total. However, $r_i$ and the factor $r_i^{-3}$ must be calculated once per iteration. This involves square root and floating point divide operations, which are much more expensive than regular FLOPs and are not pipelined properly in the CPU \cite{hager2010introduction}. For Velocity Verlet, total number of FLOPs is $(3+4) \cdot 3=21$, and even if the method has both $r_i, r_i^{-3}$ and $r_{i+1}, r_{i+1}^{-3}$ terms, we store these between the iterations such that the most expensive operations are done only once, as we saw in Listing \ref{lst:verlet-nonOO}.
 
 CPU time for both Euler Forward and Velocity Verlet has a linear relation to problem size, as we see in Table \ref*{tab:cpu-time}. As expected, Euler is the fastest, but more than what we can explain by the FLOPs ratio between the algorithms. A possible explanation is the square root operations, which are bound to make trouble with pipelining. Another possibility is the use of \lstinline|C++ Armadillo| classes. In these completely CPU bound algorithms, these may cause some of the additional variables in Verlet to be stored outside of CPU register, meaning that they must be loaded from L1 cache.
 
@@ -295,17 +298,13 @@ For planet $p$ we then get the following set of equations for solving the $n$-bo
 \end{equation}
 and correspondingly for the $y$ and $z$ axes.
 
-As these over-crowded sub- and superscripts reveal, we need more than a few equations to completely describe an $n$-body system. There are 8 planets in the solar system, and counting the Sun and Pluto we have 60 equations to solve. To keep track of this all, we have two usual strategies which each have their merit. The first is an array-based scheme where we allocate an array of length $n$ for each variable, and keep track of the planets that way. This would probably be the most computationally efficient with regards to pipelining in the CPU. The other is object orientation, which is probably the simplest to implement, and which we will use here.
+As these over-crowded sub- and superscripts reveal, we need more than a few equations to completely describe an $n$-body system. There are 8 planets in the solar system, and counting the Sun and Pluto we have 60 equations to solve. To keep track of this all, we can pick one of two strategies which each have their merit. The first is an array-based scheme where we allocate an array of length $n$ for each variable, and keep track of the planets that way. This would probably be the most computationally efficient with regards to pipelining in the CPU. The other is object orientation, which is probably the simplest to implement and which we will use here.
 
-In the object oriented approach, each planet and the Sun will be an object. The \lstinline|Planet| object should keeping its static data, limited to its mass relative to the Sun in this case, and keep the state of its position and velocity. It should also provide services which enable us to update the position and velocity states and let us query key properties which relate to this object only, like kinetic energy and angular momentum. An interface framework for implementing a \lstinline|Planet| object for the Velocity Verlet algorithm is given in Listing \ref{lst:verlet-planet-interface}.
+In the object oriented approach, each planet and the Sun will be an object. The \lstinline|Planet| object should keep its static data, limited to its mass relative to the Sun in this case, and keep the state of its position and velocity. It should also provide services which enable us to update the position and velocity states and let us query key properties which relate to this object only, like kinetic energy and angular momentum about the reference center. An interface framework for implementing a \lstinline|Planet| object for the Velocity Verlet algorithm is given in Listing \ref{lst:verlet-planet-interface}.
 
-Having defined the \lstinline|Planet| object, we next define an object for keeping track of all the \lstinline|Planet|s and calling on their services for updating state. This \lstinline|Solver| object should thus provide a data structure for keeping the \lstinline|Planet| collection as well as services to add \lstinline|Planet|s to the collection and initiating the Velocity Verlet algorithm. It should also provide services which let us query key properties which extend beyond the single \lstinline|Planet| object, like potential energy, as well as total energies and angular momentum. See Listing \ref{verlet-solver-interface} for an interface framework.
+Having defined the \lstinline|Planet| object, we next define an object for keeping track of all the \lstinline|Planet|s and calling on their services for updating state. This \lstinline|Solver| object should thus provide a data structure for keeping the \lstinline|Planet| collection as well as services to add \lstinline|Planet|s to the collection and initiating the Velocity Verlet algorithm. It should also provide services which let us query key properties which extend beyond the single \lstinline|Planet| object, like potential energy, as well as total energies and angular momentum. See Listing \ref{lst:verlet-solver-interface} for an interface framework.
 
-The only interesting service to take a closer look at in the \lstinline|Solver| object is \lstinline|solve()|. The Velocity Verlet algorithm is executed in much the same way as for the Sun-Earth case in Listing \ref{lst:verlet-nonOO}, but extended to looping over all \lstinline|Planet|s. See Listing \ref{lst:solve} for a framework.
-
-We test our object-oriented model on the Solar System. To get a stable solution, we need to ensure that the initial positions and velocities of the planets correspond to zero total momentum and where the total kinetic and potential energies correspond to closed elliptic orbits. \textit{NASA Jet Propulsion Laboratory} \cite{nasa-jpl} publishes highly accurate live data on the position and velocity of the objects in the Solar system, which we use to build our model. 
-
-Figure \ref{fig:solar-system} shows a simulation of the Sun and the planets in the Solar System over 250 years, which is a little over 1 rotation for Pluto (included even if strictly not defined as a planet). The model reproduces the elliptic orbits and preserves energy and angular momentum. We also recognize the partly overlapping orbits of Neptune and Pluto.
+Apart from \lstinline|total_potential_energy()|, where we must be careful to count the potential energies only once, the only interesting service to take a closer look at in the \lstinline|Solver| object is \lstinline|solve()|. The Velocity Verlet algorithm is executed in much the same way as for the Sun-Earth case in Listing \ref{lst:verlet-nonOO}, but extended to looping over all \lstinline|Planet|s. See Listing \ref{lst:solve} for a framework.
 
 \begin{lstlisting}[caption={Planet object interface for Velocity Verlet algorithm solving the $n$-body problem.},label={lst:verlet-planet-interface}] [!ht]
 	BEGIN OBJECT Planet
@@ -386,10 +385,14 @@ Figure \ref{fig:solar-system} shows a simulation of the Sun and the planets in t
 	END FUNCTION
 \end{lstlisting}
 
+We test our object-oriented model on the Solar System. To get a stable solution, we need to ensure that the initial relative positions and velocities of the planets correspond to closed elliptic orbits and that the total momentum of the Solar System is zero. \textit{NASA Jet Propulsion Laboratory} \cite{nasa-jpl} publishes highly accurate live data on the position and velocity of the objects in the Solar system, where these quantities naturally are preserved, which we use to build our model. 
+
+Figure \ref{fig:solar-system} shows a simulation of the Sun and the planets in the Solar System over 250 years, which is a little over 1 rotation for Pluto (included even if strictly not defined as a planet). The model reproduces the elliptic orbits and preserves energy and angular momentum. We also recognize the partly overlapping orbits of Neptune and Pluto in the middle pane.
+
 \begin{figure}[!htb]
 	\centering
 	\includegraphics[width=1\linewidth]{solar-system.png}
-	\caption{Solar system simulated using our object-oriented Velocity Verlet solver, with 1000 iterations per year over 250 years (a little more than 1 rotation for Pluto). Simulation was run with non-fixed Sun. We see that the model reproduces distinct elliptic orbits of the planets, but that for the innermost planets, which are rotating fastest, the ellipses are not completely closed (left). To the right, we see that the model preserves energy and total angular momentum with high accuracy. Annotations are deviations form initial values, and planetary units are on a Sun mass-AU-year base. Initial states collected from \cite{nasa-jpl}, with states as of 2020-Oct-15 at 00:00:00.0000.}
+	\caption{Solar system simulated using our object-oriented Velocity Verlet solver, with $10^4$ iterations per year over 250 years (a little more than 1 rotation for Pluto). Simulation was run with non-fixed Sun. We see that the model reproduces distinct elliptic orbits of the planets in the middle and to the left. To the right, we see that the model preserves energy and total angular momentum with high accuracy. Annotations are relative error from initial values, and planetary units are on a Sun mass-AU-year base. Initial states collected from \cite{nasa-jpl}, with states as of 2020-Oct-15 at 00:00:00.0000.}
 	\label{fig:solar-system}
 \end{figure}
 
@@ -403,30 +406,34 @@ Figure \ref{fig:solar-system} shows a simulation of the Sun and the planets in t
 After having developed an object-oriented Velocity Verlet solver for the $n$-body problem in the former section, we may now move on and do numerical experiments with our model. But before we do that, we should try to develop a qualitative feeling about the model's accuracy and stability.
 
 \subsection{Accuracy and Stability of the Velocity Verlet Solver}
-In Figures \ref{fig:verlet-euler} and \ref{fig:verlet-euler} we saw that the accuracy of the energy balance and angular momentum is high even for relatively low large time step $h$. The explanation for that is the $O(h^3)$ truncation error of the Velocity Verlet method. However, as we see in Figure \ref{fig:error}, we may not assume that the position and velocity accuracies are constant in three-dimensional space. In the example shown in the left and middle of Figure \ref{fig:error}, Earth is rotated once about the Sun in a circular orbit starting at $(x,y,z)=(1,0,0)$, with various time step. We see that both the error in the position and in the velocity varies with rotational angle $\theta$, but again that the sum of the error, when translated to energy, zeros out.
+In Figure \ref{fig:verlet-euler} we saw that the accuracy of the energy balance and angular momentum is high even for relatively large time step $h$. The explanation for that is the $O(h^3)$ truncation error of the Velocity Verlet method. However, as we see in Figure \ref{fig:error}, we may not assume that the position and velocity accuracies are constant in three-dimensional space. In the example shown in the left and middle of Figure \ref{fig:error}, Earth is rotated once about the Sun in a circular orbit starting at $(x,y,z)=(1,0,0)$, with various time step. We see that both the error in the position and in the velocity varies with rotational angle $\theta$, but again that the sum of the error, when translated to energy, zeros out.
 
-To the right in Figure \ref{fig:error}, a planet is put at $(x,y,z)=(1,0,0)$ with at stand still, and we see the error in the velocity as it accelerates against the Sun. As the planet moves towards the sun, the error in the velocity grows steeply. When the planet is close to the sun, at some point the $hv_{x,i}$ term in $x_{i+1}$ may also cause a step-through of the gravitational center, causing a discontinuity. The result is that the planet shoots off into space.
+To the right in Figure \ref{fig:error}, a planet is put at $(x,y,z)=(1,0,0)$ with zero velocity, and we see the error in the velocity as it accelerates against the Sun. As the planet moves towards the sun, the error in the velocity grows steeply. When the planet is close to the sun, at some point the $hv_{x,i}$ term in $x_{i+1}$ may also cause a step-through of the gravitational center, causing a discontinuity. The result is that the planet shoots off into space.
 
 \begin{figure}[!htb]
 	\centering
 	\includegraphics[width=1\linewidth]{error.png}
-	\caption{Relative error of the Velocity Verlet algorithm depending on location for various time steps. To the left we see the error in the position for Earth following a circular orbit of radius 1.0. Start conditions were \lstinline|pos = \{1.0, 0.0, 0.0\}| and \lstinline|vel = \{0.0, 2*PI, 0.0\}|, and the simulation is run for 1.0 rotation. In the middle we see the same, but for the velocity. We see that the kinetic and potential energy error cancel each outher out. To the right we see the velocity error of a planet accelerating from standstill towards the sun. Close to the sun, the Velocity Verlet method becomes unstable. Initial conditions were \lstinline|pos = \{1.0, 0.0, 0.0\}| and \lstinline|vel = \{0.0, 0.0, 0.0\}| with fixed sun.}
+	\caption{Relative error of the Velocity Verlet algorithm depending on location for various time steps. To the left we see the error in the position for Earth following a circular orbit of radius 1.0. $\varepsilon = |1 - \sqrt{x_i^2 + y_i^2}|$. Start conditions were \lstinline|pos = \{1.0, 0.0, 0.0\}| and \lstinline|vel = \{0.0, 2*PI, 0.0\}|, and the simulation is run for 1.0 rotation. In the middle we see the same, but for the velocity. We see that the kinetic and potential energy error cancel each outher out. $\varepsilon = |2\pi - \sqrt{v_{x,i}^2 + v_{y,i}^2}|/2\pi$. To the right we see the velocity error of a planet accelerating from standstill towards the sun. Close to the sun, the Velocity Verlet method becomes unstable. Initial conditions were \lstinline|pos = \{1.0, 0.0, 0.0\}| and \lstinline|vel = \{0.0, 0.0, 0.0\}| with fixed sun. $\varepsilon = |v(x_i)-v_{x,i}|/v(x_i)$.}
 	\label{fig:error}
 \end{figure}
 
 \subsection{Preservation of Mechanical Energy and Angular Momentum: Earth's Orbit with a Super Massive Jupiter}
-We saw in Section \ref{celestial-mechanics} that a planet's mechanical energy and angular momentum is preserved during flight. Let us put our model to the test by introducing a super massive Jupiter in the Sun-Earth System, and see how it preserves these key quantities. Jupiter's mass in the Solar System is a little less than one thousandth of the Sun's, so it would be interesting to see how much larger it may be before Earth's orbit is influenced significantly. 
+We saw in Section \ref{celestial-mechanics} that a planet's mechanical energy and angular momentum is preserved during flight. Let us put our model to the test by introducing a super massive Jupiter in the Sun-Earth System, and see how it preserves these key quantities. Jupiter's mass in the Solar System is a little less than one thousandth of the Sun's, so it would be interesting to see how much larger it may be before Earth's orbit is influenced significantly, and how this measures up to Kepler's first law, which states that all planets' orbits are elliptic.
 
-In Figure \ref{fig:massive-jupiter} we have simulated the Sun-Earth-Jupiter system, with varying multiples of Jupiter's mass. Sun was kept fixed at the center. We see that for 1x and 10x Jupiter masses, Earth's orbit is largely undisturbed, to be a little delayed in the latter due to a gentle radial fluctuation in the trajectory. This tendency is more pronounced for 100x Jupiter masses, but still the orbit is largely regular, and we see that the solver performs well. Mechanical energy and angular momentum are preserved with high accuracy. Another 10-fold increase causes trouble, however. Earth is quickly thrown out of its regular orbit, getting dangerously close to the sun, where at around 5 years, the model breaks down. Earth then swirls around Jupiter for some 20 years, before again being thrown against the sun, and then shoots off into space. The simulation was run with $10^3$ integration points per year in all cases. Increasing to $10^4$ or even $10^5$ did not change the stability significantly.
+In Figure \ref{fig:massive-jupiter} we have simulated the Sun-Earth-Jupiter system, with varying multiples of Jupiter's mass. Sun was kept fixed at the center. We see that for 1x and 10x Jupiter masses, Earth's orbit is largely undisturbed, only a little delayed in the latter due to a gentle radial fluctuation in the trajectory. This tendency is more pronounced for 100x Jupiter masses. We see that the orbit still is regular, but that it fluctuates within a band of about 0.15-0.20 AU. As a consequence, Kepler's first law does not hold in this experiment. 
+
+Up until 100x Jupiter, mechanical energy and angular momentum are preserved with high accuracy, meaning that the solver performs well.
+
+Another 10-fold increase to 1000x Jupiter causes trouble, though. As we see to the far right in Figure \ref{fig:massive-jupiter}, Earth is quickly thrown out of its regular orbit, getting dangerously close to the sun, where at around 5 years, the model breaks down. Earth then swirls around Jupiter for some 20 years, before again being thrown against the sun, and then shoots off into space. The simulation was run with $10^3$ integration points per year in all cases. Increasing to $10^4$ or even $10^5$ did not change the stability significantly.
 
 \begin{figure}[!htb]
 	\centering
 	\includegraphics[width=1\linewidth]{massive-jupiter.png}
-	\caption{Sun-Earth-Jupiter system with varying sizes of Jupiter with Velocity Verlet. In the top row we see the Earth's worsening orbit for increasing mass of Jupiter, before Earth's orbit completely breaks down. In the middle row we see that up until 100x Jupiter mass, Earth's angular momentum and energy balance are both stable. For 1000x Jupiter mass, everything breaks down when Earth comes close to first the Sun, and then starts swirling around Jupiter, before it takes off into space. Note the $10^{-5}$ Sun-masses-AU-year scaling. Initial conditions for Earth were \lstinline|pos = \{1.0, 0.0, 0.0\}| and \lstinline|vel = \{0.0, 2*PI, 0.0\}|, and for Jupiter \lstinline|pos = \{-5.2, 0.0, 0.0\}| and \lstinline|vel = \{0.0, -2*PI/SQRT(5.2), 0.0\}|, giving both a counter-clockwise circular rotation. Sun was fixed. 1000 integration points per year in all cases.}
+	\caption{Sun-Earth-Jupiter system with varying sizes of Jupiter with Velocity Verlet. In the top row we see the Earth's worsening orbit for increasing mass of Jupiter, before Earth's orbit completely breaks down. In the 100x Jupiter pane in the top row, the shaded area is the band within which Earth's orbit fluctuates, while the thick line shows the trajectory in the last year. In the bottom row we see that up until 100x Jupiter mass, Earth's angular momentum and energy balance are both stable. For 1000x Jupiter mass, everything breaks down when Earth comes close to first the Sun, and then starts swirling around Jupiter, before it takes off into space. Annotations are relative error from initial values. Note the $10^{-5}$ Sun-masses-AU-year scaling. Initial conditions for Earth were \lstinline|pos = \{1.0, 0.0, 0.0\}| and \lstinline|vel = \{0.0, 2*PI, 0.0\}|, and for Jupiter \lstinline|pos = \{-5.2, 0.0, 0.0\}| and \lstinline|vel = \{0.0, -2*PI/SQRT(5.2), 0.0\}|, giving both a counter-clockwise circular rotation. Sun was fixed. 1000 integration points per year in all cases.}
 	\label{fig:massive-jupiter}
 \end{figure}
 
-\subsection{Orbits: Eccentricity and Forms of the Force}
+\subsection{Newton's Gravitational Law: Eccentricity and Forms of the Force}
 Kepler's third law about the $T^2 \propto a^3$ relationship between period and elliptical axis got its confirmation in the combination of Newton's gravitational law and second law, Equation (\ref{r3-T2}). This again gave us the eccentricity factor $e$, which easily tells us about the shape of an object's trajectory based on initial conditions $r_0, v_0$;
 \begin{equation}
 	e = \frac{r_0 v_0^2}{GM} - 1.
@@ -450,7 +457,7 @@ and the corresponding potential energy $E_P$ is then on the form
 \begin{equation} \label{newton-grav-alt}
 	E_P = \frac{GMm}{(-\beta+1)r^{\beta-1}}.
 \end{equation}
-To reflect this in our Velocity Verlet solver, we update \lstinline|Planet|'s \lstinline|update_acceleration(other_planet)| service, and \lstinline|Solver|'s \lstinline|potential_energy(planet)| service. When we change $\beta$ away from 2, we should still expect that energy and angular momentum are conserved in this alternate physical domain. Kepler's third law should not hold, however, since that is a consequence of Newton's gravitational law in combination with Newton's second law. 
+To reflect this in our Velocity Verlet solver, we update \lstinline|update_acceleration()| service in \lstinline|Planet|, and  \lstinline|potential_energy()| service in \lstinline|Solver|. When we change $\beta$ away from 2, we should still expect that energy and angular momentum are conserved in this alternate physical domain. Kepler's third law should not hold, however, since that is a consequence of Newton's gravitational law in combination with Newton's second law. 
 
 Figure \ref{fig:force} shows just that. As we see to the left, even a slight change of 1/1000th clearly makes the planet drift out of its regular orbit. Increasing $\beta$ to 2.5 gives rise to a beautiful doughnut shape, which however does not seem to be repeating itself. The only closed orbit that seems possible in this domain is the circular, which occurs at Further increasing $\beta$ to 3, we see a collapse of the orbit for $v_0 < 2\pi$. The orbit is circular for $v_0 = 2\pi$, and open for $v_0 > 2\pi$. In all cases of $\beta$, we see that both energy and angular moment are conserved.
 
@@ -477,7 +484,7 @@ where we have assumed $r_0 = 1$. The circular is easily explained, since $r_0 = 
 \begin{figure}[!htb]
 	\centering
 	\includegraphics[width=1\linewidth]{force.png}
-	\caption{Alternate forms of the gravitational force simulated with Velocity Verlet. The inverse square radius, $r^2$, has been replaced by $r^{\beta}$ as in Equation (\ref{newton-grav-alt}). To the upper left we see that even a slight deviation from $\beta=2$ makes closed elliptic orbits impossible. Over 100 years, the orbit has shifted upwards in this case. Upper middle shows a beautiful doughnut shaped orbit, which appears not to be repeating itself. Upper right shows collapse, circular and escape trajectories for $\beta = 3$. The lower row shows that energy and angular momentum are conserved in this alternate physical domain. The exception is the numerical breakdown of the model to the far right in the lower right picture. Initial conditions were \lstinline|pos = \{1.0, 0.0, 0.0\}| and \lstinline|vel = \{0.0, v0, 0.0\}| with fixed sun, and with simulation times as shown on the x-axes of the lower row. $10^4$ integration points per year.}
+	\caption{Alternate forms of the gravitational force simulated with Velocity Verlet. The inverse square radius, $r^2$, has been replaced by $r^{\beta}$ as in Equation (\ref{newton-grav-alt}). To the upper left we see that even a slight deviation from $\beta=2$ makes closed elliptic orbits impossible. Over 100 years, the orbit has shifted upwards in this case. The green line is the orbit in the orbit over 100 years with $\beta=2$. Upper middle, with $\beta=2.5$, shows a beautiful doughnut shaped orbit, which appears not to be repeating itself. Again, the green line shows the orbit with $\beta=2$ in the same time frame. Upper right shows collapse, circular and escape trajectories for $\beta = 3$. The lower row shows that energy and angular momentum are conserved in this alternate physical domain. The exception is the numerical breakdown of the model to the far right in the lower right picture, which corresponds to crashing into the Sun. Initial conditions were \lstinline|pos = \{1.0, 0.0, 0.0\}| and \lstinline|vel = \{0.0, v0, 0.0\}| with fixed sun, and with simulation times as shown on the x-axes of the lower row. $10^4$ integration points per year.}
 	\label{fig:force}
 \end{figure}
 
@@ -486,9 +493,9 @@ A modification to Newton's gravitational law that is real, comes from the genera
 \begin{equation} \label{newton-rel}
 	F_G = \frac{GMm}{r^2} \bigg[1 + \frac{3l^2}{r^2c^2}\bigg],
 \end{equation}
-where $l = |\mathbf{r} \times \mathbf{v}|$ is the per-unit-mass angular momentum, and $c$ is the speed of light. As we saw in the previous section, modifying Newton's gravitational law led to non-closed planetary orbit, and the correction given here will do the same. The observed perturbation of Mercury's perihelion is when other effects like the pull from other planets is taken away is 43 arc seconds per century \cite{fys4150-p3}, and adding this factor to the calculation of acceleration in our Velocity Verlet solver, should reproduce the same result.
+where $l = |\mathbf{r} \times \mathbf{v}|$ is the per-unit-mass angular momentum, and $c$ is the speed of light. As we saw in the previous section, modifying Newton's gravitational law led to non-closed planetary orbit, and the correction given here will do the same. The observed perturbation of Mercury's perihelion, when other effects like the pull from other planets is taken away, is 43 arc seconds per century \cite{fys4150-p3}, and adding this general relativistic factor to the calculation of acceleration in our Velocity Verlet solver should reproduce the same result.
 
-To reproduce this, however, requires 100 years of simulation with extremely high accuracy. To get good performance while we iterate towards the number of integration points per year which gives an acceptable accuracy, we write a special function which performs this special task.
+To reproduce this, however, requires 100 years of simulation with extremely high accuracy. To get good performance while we iterate towards the number of integration points per year which gives an acceptable accuracy, we write a special function which performs this special task. This model considers only two dimensions, since any two-body problem is planar.
 
 Table \ref{tab:perihelion} shows the results for $10^3$ to $10^8$ integration points. We see that the error in the uncorrected calculation drops to about 0.2 arc secs at $10^7$, and the corrected has a perturbation of 43.1 arc seconds, which is the result we wanted. It is also worthwhile to increase the number of integration points another 10-fold to see that the perturbation does not proceed beyond 43 arc seconds. We see that at $n=10^8$, the perturbation is 43.0 arc seconds, indicating that the angle is converging and that the calculation is correct.
 
@@ -512,15 +519,23 @@ Table \ref{tab:perihelion} shows the results for $10^3$ to $10^8$ integration po
 \end{table}
 
 
-
 \section{Discussion and Conclusion} \label{conclusion}
 % - State your main findings and interpretations
 % - Try as far as possible to present perspectives for future work
 % - Try to discuss the pros and cons of the methods and possible improvements
+Euler's Forward method showed us that energy conservation is a requirement when solving differential equations involving motion, and that even if Euler-Cromer deals with this, the higher accuracy of the Velocity Verlet method makes it more suitable, even if it is more computationally demanding. For circular trajectories, Velocity Verlet is reliable even for as little as $10^2$-$10^3$ integration points per rotation, while for elliptic orbits, we need to increase the number to $10^3$-$10^4$. 
 
-n=100 case has flown only (100-1/8) rounds vs 100 for n=1000, but energy is the same. What does that have to say for the energy?
+Its accuracy is not independent of angular or radial position. We saw that it varies both in circular and axial trajectories, and when the distance between two bodies becomes too small, the method breaks down numerically. An interesting observation relating to this which remains to be explained is that when simulating a circular orbit with Velocity Verlet using 100 integration points per year over 100 years, the total distance traveled in Figure \ref{fig:verlet-euler} was short by 1/8th of a year, while both kinetic and potential energy were conserved with high accuracy. The planet seems to have \textit{moved} slower than its velocity. The explanation may lie in that the position and velocity equations have different accuracies.
 
-Suggestions: let sun move in z direction, simulate the forming of a plane structure if planets spread in the z dir. what happens if the sun suddenly disappears. how about twin-star sun? sudden, slow arrival of a jupiter-sized planet from outer space. investigate differences between radial vs circular accuracy, important for the Ek+Ep conservation. In Fig1 seems like movement is slower than velocity, since kinetic energy is preserved, but distance traveled is 1/8th of a rotation short.
+
+The object-oriented Velocity Verlet solver we developed could be used to conduct numerical experiments on $n$-body problems. It correctly reproduced the orbits of the planets in the Solar System, and predicted correctly the trajectories in our experiment with eccentricity. We saw that by controlling the preservation of mechanical energy and angular momentum, the numerical stability could be monitored even when we changed Newton's gravitational law. Our experiments with the gravitational force's relation to radius suggested that closed orbits are a phenomenon of the inverse-square radius.
+
+By introducing a general relativistic correction to Newton's gravitational law, our model reproduced the famous perihelion precession of Mercury with high accuracy. This confirms both that purely elliptic orbits are a mathematical phenomenon, and that the observed precession of Mercury can be explained by the general theory of relativity.
+
+Some interesting experiments which could be conducted with the Velocity Verlet solver are to simulate the formation of new, stable orbits by initiating the planets in other states than they are in the physical world; how the orbits would be affected by the slow arrival of a Jupiter-sized planet from outer space; the and to investigate the planetary orbits around twin stars.
+
+For future work, it would also be interesting to investigate the expansion of the Velocity Verlet solver to include an adaptive time step algorithm. This would both increase computational efficiency, while improve numerical stability. Another interesting possibility is to expand it to electric and magnetic forces, which would render it a powerful tool for solving a wider set of physics problems. 
+
 
 \clearpage
 \bibliographystyle{plain}
