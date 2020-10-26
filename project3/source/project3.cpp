@@ -20,8 +20,37 @@ using namespace std;
 
 /* Prints program usage */
 void print_usage() {
-  cout << "usage: project3" << endl;
-  cout << "... pending ..." << endl;
+  cout << "usage: project3 [-h | -f | -E | -V | -T | -C | -P] -n -y -b -v -j -s -r" << endl;
+  cout << "  -h   Print this text" << endl;
+  cout << "  -f   Run system from csv file input. Format: mass,x,y,z,vx,vy,vz" << endl;
+  cout << "       mass is planet's mass relative to Sun. vx,vy,vz in AU/day." << endl;
+  cout << "       Outputs total kinetic,potential energy, angular momentum," << endl;
+  cout << "       x,y,z,vx,vy,vz,ep,ek,am, for each planet. vx,vy,vz in AU/yr." << endl;
+  cout << "  -E   Euler's forward method with Earth in circular orbit aroudn the Sun" << endl;
+  cout << "       Outputs x,y,z,vx,vy,vz, for each planet. vx,vy,vz in AU/yr." << endl;
+  cout << "  -V   Velocity Verlet method with Earth in circular orbit aroudn the Sun" << endl;
+  cout << "       Outputs x,y,z,vx,vy,vz, for each planet. vx,vy,vz in AU/yr." << endl;
+  cout << "  -T   Time Euler's and Vel. Verlet with preset n=10^1 to 10^9. Outputs" << endl;
+  cout << "       result averaged over 10 runs in csv format: n,euler,verlet" << endl;
+  cout << "  -C   Creator mode. Experiment with Sun-Earth-Jupiter system. Select Earth's" << endl;
+  cout << "       velocity [AU/yr.] with -v, include and specify Jupiter mass with -j," << endl;
+  cout << "       play with the 1/r^b relationship between radius and force" << endl;
+  cout << "       with -b." << endl;
+  cout << "       Outputs total kinetic,potential energy, angular momentum," << endl;
+  cout << "       x,y,z,vx,vy,vz,ep,ek,am, for each planet. vx,vy,vz in AU/yr." << endl;
+  cout << "  -P   Calculates the perihelion precession of Mercury. Include gen. rel. with -r." << endl;
+  cout << "  -n   Number of integration points per year." << endl;
+  cout << "  -y   Years to simulate" << endl;
+  cout << "  -b   1/r^b relationship between radius and gravitational force (only with -C)" << endl;
+  cout << "  -v   Earth's velocity vy (only with -C)" << endl;
+  cout << "  -j   Enables Jupiter under -C and specifies its mass multiplier" << endl;
+  cout << "  -r   Includes general relativistic correction to Newton's grav. law. (only with -P)" << endl;
+  cout << "" << endl;
+  cout << "Example:" << endl;
+  cout << "$ ./project3 -C -n 100 -y 2 -v 5" << endl;
+  cout << "ek,ep,am,0x,0y,0z,0vx,0vy,0vz,0ep,0ek,0am,1x,1y,1z,1vx,1vy,1vz,1ep,1ek,1am," << endl;
+  cout << "3.7500000000000003e-05,-1.1843525281307230e-04,1.5000000000000000e-05,0.0000000000000000e+00,0.0000000000000000e+00,0.0000000000000000e+00,0.0000000000000000e+00,0.0000000000000000e+00,0.0000000000000000e+00,-1.1843525281307230e-04,0.0000000000000000e+00,0.0000000000000000e+00,1.0000000000000000e+00,0.0000000000000000e+00,0.0000000000000000e+00,0.0000000000000000e+00,5.0000000000000000e+00,0.0000000000000000e+00,-1.1843525281307230e-04,3.7500000000000003e-05,1.5000000000000000e-05" << endl;
+  cout << "..." << endl;
 }
 
 /* From utils.cpp */
@@ -37,7 +66,6 @@ int main(int argc, char **argv) {
   double earth_vy0 = 2*M_PI;
   double jupiter_mass = 954.79194E-6;  // relative to the sun
   bool include_jupiter = false;
-  bool stability = false;  // preservation of Ep+Ek, angular momentum
   bool general_relativistic = false;  // enables gen. rel. grav. force in PERIHELION mode
   string fname = "";
   vec pos(3), vel(3);
@@ -52,7 +80,7 @@ int main(int argc, char **argv) {
    }
 
   opterr = 0;
-  while ((opt = getopt(argc, argv, "hEVTCPsrn:y:f:b:v:j:")) != -1) {
+  while ((opt = getopt(argc, argv, "hEVTCPn:y:f:b:v:j:r")) != -1) {
     switch (opt) {
     case 'h':
       print_usage();
@@ -71,9 +99,6 @@ int main(int argc, char **argv) {
       continue;
     case 'P':
       mode = PERIHELION;
-      continue;
-    case 's':
-      stability = true;
       continue;
     case 'n':
       n = (long long int) atoi(optarg);
@@ -166,14 +191,8 @@ int main(int argc, char **argv) {
       ek = earth.kinetic_energy();
       ep = solver.potential_energy(&earth);
 
-      if (stability) {
-	cout << "ek0+ep0,ek+ep,am0,am" << endl;
-	cout << ek0+ep0 << "," << ek+ep << "," << am0 << "," << am << endl;
-      }
-      else {
-	cout << solver.csv_header() << endl;
-	solver.flight_log.save(cout, csv_ascii);
-      }
+      cout << solver.csv_header() << endl;
+      solver.flight_log.save(cout, csv_ascii);
     }
     break;
 
