@@ -49,7 +49,7 @@ void init_metropolis(double *wij, double T) {
 
 /* Runs the metropolis algorithm with monte carlo selection on the lattice. Updates
    total energy E/J and total magnetic moment along the way. */
-void metropolis(int L, char **lattice, double *wij, double &E, double &M,
+void metropolis(int L, char **lattice, double *wij, double &E, double &M, int &num_accepted,
 		uniform_real_distribution<double> &dist, mt19937_64 &rng) {
   int x,y;
   int dE;
@@ -64,6 +64,7 @@ void metropolis(int L, char **lattice, double *wij, double &E, double &M,
 			    lattice[x][PERIOD(y-1)] +   \
 			    lattice[x][PERIOD(y+1)]);
       b = (int) (dist(rng) < wij[dE+8]);
+      num_accepted += b;
       lattice[x][y] -= 2*b*lattice[x][y];
       E += b*dE;
       M += 2*b*lattice[x][y];

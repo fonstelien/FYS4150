@@ -5,6 +5,12 @@
 #include <unistd.h>
 #include <omp.h>
 
+// Maximum number of stored samples in the results matrix
+#define MAX_SAMPLES 1000
+
+// Number of bins for the probability density estimation
+#define PROB_DIST_BINS 100
+
 #define DEBUG(msg) cout << "DEBUG " << msg << endl;
 
 // Checks if memory allocation was successful.
@@ -23,6 +29,8 @@
 using namespace std;
 using namespace arma;
 
+/* From utils.cpp */
+
 /* Initializes lattice. Spins are either 1 (up) or -1 (down). Entropy s/2 is the 
    likelihood of any spin -1 such that s=0.0 gives all 1s; s=1.0 gives complete 
    random spins. */
@@ -40,7 +48,7 @@ void init_metropolis(double *wij, double T);
 
 /* Runs the metropolis algorithm with monte carlo selection on the lattice. Updates
    total energy E/J and total magnetic moment along the way. */
-void metropolis(int L, char **lattice, double *wij, double &E, double &M,
+void metropolis(int L, char **lattice, double *wij, double &E, double &M, int &num_accepted,
 		uniform_real_distribution<double> &dist, mt19937_64 &rng);
 
 /* Calculates the n-sample sample-mean of variable x, normalized to lattice size N=L*L. */
@@ -52,3 +60,21 @@ double sample_var(double x2, double x, int n, int L);
 /* Plots the lattice to stdout. */
 void plot_lattice(int L, char **lattice);
 
+
+/* From modes.cpp */
+
+/* Loops over temperature range T1 to T2 with steps dT. Lattice size LxL. 
+   Returns result arma::mat. Simulation runs for equilibration_cycles before 
+   logging of results begins. Total runs = equilibration_cycles + cycles. */
+mat temp_range(int L, double entropy, double T1, double dT, double T2,
+	       int cycles, int equilibration_cycles);
+
+/* Runs Monte Carlo simulations over LxL lattice at temp. T for given number of cycles. 
+   Returns result arma::mat */
+mat equilibration(int L, double entropy, double T, int cycles);
+
+/* Estimation of the probability distribution at temperature T. 
+   Returns result arma::mat with bins. Simulation runs for equilibration_cycles before 
+   logging of results begins. Total runs = equilibration_cycles + cycles. */
+mat probability_distribution(int L, double entropy, double T,
+			     int cycles, int equilibration_cycles);

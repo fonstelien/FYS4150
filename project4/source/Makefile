@@ -1,6 +1,6 @@
 CC := g++ -std=c++11
 BIN := project4 test_project4
-OBJ := utils.o
+OBJ := utils.o modes.o
 TEST_OBJ := $(OBJ) catch.o
 
 ifdef optimize
