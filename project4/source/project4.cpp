@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
   }
 
   opterr = 0;
-  while ((opt = getopt(argc, argv, "hRE:P:L:pl:t:c:e:s:b:")) != -1) {
+  while ((opt = getopt(argc, argv, "hR:E:P:L:pl:c:e:s:b:")) != -1) {
     switch (opt) {
     case 'h':
       print_usage();
@@ -45,6 +45,8 @@ int main(int argc, char *argv[]) {
     case 'R':
       mode = TEMP_RANGE;
       T1 = strtod(optarg, NULL);
+      dT = strtod(argv[optind++], NULL);
+      T2 = strtod(argv[optind], NULL);
       continue;
     case 'E':
       mode = EQUILIBRATION;
@@ -62,9 +64,6 @@ int main(int argc, char *argv[]) {
       L = atoi(optarg);
       continue;
     case 't':
-      T1 = strtod(optarg, NULL);
-      dT = strtod(argv[optind++], NULL);
-      T2 = strtod(argv[optind], NULL);
       continue;
     case 'c':
       cycles = (int) strtod(optarg, NULL);

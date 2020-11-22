@@ -58,9 +58,9 @@ mat temp_range(int L, double entropy, double T1, double dT, double T2,
       }
       results(i,0) = T;
       results(i,1) = sample_mean(Eacc, cycles+1, L);
-      results(i,2) = sample_var(E2acc, Eacc, cycles+1, L)/(T*T);
+      results(i,2) = sample_var(E2acc, Eacc, cycles+1, L)/(T*T);  // heat capacity CV
       results(i,3) = sample_mean(Macc_abs, cycles+1, L);
-      results(i,4) = sample_var(M2acc, Macc_abs, cycles+1, L)/T;
+      results(i,4) = sample_var(M2acc, Macc_abs, cycles+1, L)/T;  // susceptibiliy Chi
       results(i,5) = sample_mean(Macc, cycles+1, L);
     }
       
