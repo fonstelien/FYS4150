@@ -9,7 +9,7 @@ mat temp_range(int L, double entropy, double T1, double dT, double T2,
   int n, num_accepted;
 
   // Setting up results matrix
-  n = (T2 - T1)/dT + 1;
+  n = (int) ((T2 - T1)/dT + 1.);
   if (n > MAX_SAMPLES) {
     cerr << "error: too many steps dT" << endl;
     exit(2);

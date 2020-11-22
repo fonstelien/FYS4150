@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
   double T1 = 2.0, dT = .1, T2 = 2.4;
   double entropy = 1.0;
   int cycles = (int) 1.E5;
-  int equilibration_cycles = 0;
+  int equilibration_cycles = -1;
   mat results;
   int bins = 20;  // default number of bins for the probability distribution estimation
   double Evar = 0.;
@@ -90,6 +90,9 @@ int main(int argc, char *argv[]) {
     print_usage();
     exit(2);
   }
+
+  if (equilibration_cycles < 0)
+    equilibration_cycles = cycles/10;
 
   // Run simulations
   switch (mode) {
