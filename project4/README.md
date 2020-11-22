@@ -17,7 +17,7 @@ g++ -std=c++11 project4.cpp utils.o modes.o -o project4 -Wall -Wextra -fopenmp -
 $ ./project4 -h
 usage: project4 [-h | R | E | P | L ] -lcesb
  -h  prints this text
- -R  runs over temperature Range: '-R T1 dt T2'
+ -R  runs over temperature Range: '-R T1 dT T2'
  -E  runs Equilibration at given temp: -E T
  -P  Probability distribution estimation at given temp: -P T
  -L  outputs the Lattice at end of sim. for given temp: -L T
