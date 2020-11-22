@@ -81,7 +81,7 @@ mat equilibration(int L, double entropy, double T, int cycles) {
   double Eacc, E2acc, Macc, M2acc, Macc_abs;
   char *p, **lattice;
   double wij[17];
-  mt19937_64 rng(0);
+  mt19937_64 rng(RNG_SEED);
   uniform_real_distribution<double> dist(0.,1.);
 
   // Setting up results matrix
@@ -146,22 +146,23 @@ mat equilibration(int L, double entropy, double T, int cycles) {
    Returns result arma::mat with bins. Simulation runs for equilibration_cycles before 
    logging of results begins. Total runs = equilibration_cycles + cycles. */
 mat probability_distribution(int L, double entropy, double T,
-			     int cycles, int equilibration_cycles) {
+			     int cycles, int equilibration_cycles, int bins, double &Evar) {
   mat results;
   int num_accepted, idx;
   double E, M;
+  double Eacc, E2acc;
   double Emin = -2., Emax = 0.;
   double dE;
   char *p, **lattice;
   double wij[17];
-  mt19937_64 rng(0);
+  mt19937_64 rng(RNG_SEED);
   uniform_real_distribution<double> dist(0.,1.);
 
   // Setting up results matrix
-  results = mat(PROB_DIST_BINS, 2); // bins in the normalized energy range [-2,2]
+  results = mat(bins, 3); // bins in the normalized energy range [-2,2]
   results.zeros();
-  dE = (Emax - Emin)/PROB_DIST_BINS;  // step in the normalized energy range [-2,2]
-  for (idx = 0; idx < PROB_DIST_BINS; idx++)
+  dE = (Emax - Emin)/bins;  // step in the normalized energy range [-2,2]
+  for (idx = 0; idx < bins; idx++)
     results(idx, 0) = Emin + idx*dE;
   
   // Set up lattice structure
@@ -178,14 +179,18 @@ mat probability_distribution(int L, double entropy, double T,
 
   // Monte Carlo simulation
   for (int c = 0; c < equilibration_cycles; c++)
-    metropolis(L, lattice, wij, E, M, num_accepted, dist, rng);
+    metropolis(L, lattice, wij, E, M, num_accepted, dist, rng);  // thermalizing...
 
   E = energy(L, lattice);
+  Eacc = E2acc = 0.;
   for (int c = 0; c < cycles; c++) {
+    Eacc += E;
+    E2acc += E*E;
     idx = (int) ((E/(L*L) - Emin)/dE);
-    if (idx >= PROB_DIST_BINS)
-      idx = PROB_DIST_BINS - 1;
+    if (idx >= bins)
+      idx = bins - 1;
     results(idx,1) += 1;
+    results(idx,2) += 1./cycles;
     metropolis(L, lattice, wij, E, M, num_accepted, dist, rng);
   }
   
@@ -193,5 +198,49 @@ mat probability_distribution(int L, double entropy, double T,
   free(p);
   free(lattice);
   
+  Evar = sample_var(E2acc, Eacc, cycles+1, L);  
   return results;
 }
+
+
+/* Returns result arma::mat with lattice at end of simulation. */
+mat get_lattice(int L, double entropy, double T, int cycles) {
+  mat results;
+  int num_accepted;
+  double E, M;
+  char *p, **lattice;
+  double wij[17];
+  mt19937_64 rng(RNG_SEED);
+  uniform_real_distribution<double> dist(0.,1.);
+
+  // Setting up results matrix
+  results = mat(L, L);
+  
+  // Set up lattice structure
+  p = (char *) calloc(L*L, sizeof(char));
+  CHECK_ALLOC(p);
+  lattice = (char **) calloc(L, sizeof(char *));
+  CHECK_ALLOC(lattice);
+  for (int i = 0; i < L; i++)
+    lattice[i] = &p[i*L];
+
+  // Initializing  
+  init_metropolis(wij, T);
+  init_spins(L, entropy, lattice);
+
+  // Monte Carlo simulation
+  for (int c = 0; c < cycles; c++)
+    metropolis(L, lattice, wij, E, M, num_accepted, dist, rng);
+
+  for (int i = 0; i < L; i++)
+    for (int j = 0; j < L; j++)
+      results(i,j) = lattice[i][j];
+  
+  // Clean up
+  free(p);
+  free(lattice);
+  
+  return results;
+}
+
+

@@ -5,11 +5,11 @@
 #include <unistd.h>
 #include <omp.h>
 
+// RNG seed
+#define RNG_SEED 0
+
 // Maximum number of stored samples in the results matrix
 #define MAX_SAMPLES 1000
-
-// Number of bins for the probability density estimation
-#define PROB_DIST_BINS 100
 
 #define DEBUG(msg) cout << "DEBUG " << msg << endl;
 
@@ -77,4 +77,7 @@ mat equilibration(int L, double entropy, double T, int cycles);
    Returns result arma::mat with bins. Simulation runs for equilibration_cycles before 
    logging of results begins. Total runs = equilibration_cycles + cycles. */
 mat probability_distribution(int L, double entropy, double T,
-			     int cycles, int equilibration_cycles);
+			     int cycles, int equilibration_cycles, int bins, double &Evar);
+
+/* Returns result arma::mat with lattice at end of simulation. */
+mat get_lattice(int L, double entropy, double T, int cycles);

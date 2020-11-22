@@ -6,6 +6,7 @@ using namespace std;
 #define TEMP_RANGE 1
 #define EQUILIBRATION 2
 #define PROBABILITY 3
+#define LATTICE_OUT 4
 
 // Maximum number of stored samples
 #define MAX_SAMPLES 1000
@@ -25,6 +26,8 @@ int main(int argc, char *argv[]) {
   int cycles = (int) 1.E5;
   int equilibration_cycles = 0;
   mat results;
+  int bins = 20;  // default number of bins for the probability distribution estimation
+  double Evar = 0.;
 
   // Parsing args
   if (argc < 2) {
@@ -34,7 +37,7 @@ int main(int argc, char *argv[]) {
   }
 
   opterr = 0;
-  while ((opt = getopt(argc, argv, "hRE:P:pl:t:c:e:s:")) != -1) {
+  while ((opt = getopt(argc, argv, "hRE:P:L:pl:t:c:e:s:b:")) != -1) {
     switch (opt) {
     case 'h':
       print_usage();
@@ -51,9 +54,10 @@ int main(int argc, char *argv[]) {
       mode = PROBABILITY;
       T1 = strtod(optarg, NULL);
       continue;
-    // case 'p':
-    //   print_lattice = true;
-    //   continue;
+    case 'L':
+      mode = LATTICE_OUT;
+      T1 = strtod(optarg, NULL);
+      continue;
     case 'l':
       L = atoi(optarg);
       continue;
@@ -70,6 +74,9 @@ int main(int argc, char *argv[]) {
       continue;
     case 's':
       entropy = strtod(optarg, NULL);
+      continue;
+    case 'b':
+      bins = (int) strtod(optarg, NULL);
       continue;
     default:
       cerr << "error: unknown option: " << (char) optopt << endl;
@@ -96,9 +103,14 @@ int main(int argc, char *argv[]) {
     break;
 
   case PROBABILITY:
-    results = probability_distribution(L, entropy, T1, cycles, equilibration_cycles);
+    results = probability_distribution(L, entropy, T1, cycles, equilibration_cycles,
+				       bins, Evar);
     break;
 
+  case LATTICE_OUT:
+    results = get_lattice(L, entropy, T1, cycles);
+    break;
+    
   default:
     break;
   }
@@ -121,7 +133,12 @@ int main(int argc, char *argv[]) {
     break;
 
   case PROBABILITY:
-    cout << "n,E" << endl;
+    cout << "# Evar=" << Evar << endl;
+    cout << "E,n,p" << endl;
+    results.save(cout, csv_ascii);
+    break;
+
+  case LATTICE_OUT:
     results.save(cout, csv_ascii);
     break;
     
