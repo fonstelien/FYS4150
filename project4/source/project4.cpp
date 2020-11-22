@@ -13,8 +13,25 @@ using namespace std;
 
 /* Prints program usage */
 void print_usage() {
-  cout << "usage: project3 [-h | -f | -E | -V | -T | -C | -P] -n -y -b -v -j -s -r" << endl;
-  cout << "..." << endl;
+  cout << "usage: project4 [-h | R | E | P | L ] -lcesb" << endl;
+  cout << " -h  prints this text" << endl;
+  cout << " -R  runs over temperature Range: '-R T1 dt T2'" << endl;
+  cout << " -E  runs Equilibration at given temp: -E T" << endl;
+  cout << " -P  Probability distribution estimation at given temp: -P T" << endl;
+  cout << " -L  outputs the Lattice at end of sim. for given temp: -L T" << endl;
+  cout << " -l  side length of lxl lattice. Default l=20" << endl;
+  cout << " -c  cycles in simulation" << endl;
+  cout << " -e  equilibration cycles for opts -R and -P. Default e=c/10" << endl;
+  cout << " -s  initial entropy in range [0.0,1.0]" << endl;
+  cout << " -b  number of bins in the prob. density estimation for -P. Default b=20" << endl;
+  cout << endl;
+  cout << " All output in csv format." << endl;
+  cout << " Example:" << endl;
+  cout << " $ project4 -R 2 .1 2.3 -l 20 -c 1e5" << endl;
+  cout << " T,E,CV,Mabs,Chi,M" << endl;
+  cout << " 2.0000000000000000e+00,-1.7459954400455997e+00,7.3134602046044161e-01,9.1147373526264741e-01,3.8114415508978711e-01,-9.1147373526264741e-01" << endl; 
+  cout << " 2.1000000000000001e+00,-1.6617241827581726e+00,9.6394348202441926e-01,8.6970120298797016e-01,8.1059688821260345e-01,-8.6970120298797016e-01" << endl;
+  cout << " 2.2000000000000002e+00,-1.5496672033279668e+00,1.3470200211441872e+00,7.8916300836991626e-01,3.2399410438633409e+00,-1.3165198348016521e-01" << endl;
 }
 
 int main(int argc, char *argv[]) {
@@ -37,7 +54,7 @@ int main(int argc, char *argv[]) {
   }
 
   opterr = 0;
-  while ((opt = getopt(argc, argv, "hR:E:P:L:pl:c:e:s:b:")) != -1) {
+  while ((opt = getopt(argc, argv, "hR:E:P:L:l:c:e:s:b:")) != -1) {
     switch (opt) {
     case 'h':
       print_usage();
