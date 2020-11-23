@@ -1,5 +1,5 @@
 # FYS4150 H20 Project 4
-You will find the report and supporting files are in the `report` folder and source code in the `source` folder. The source code is arranged such that you select which mode to run the main program in `project4.cpp` in, and these modes are implemented in the `modes.cpp` file. Other stuff that is common to the modes are implemented in `utils.cpp`, and `utils.hpp` ties it all together.
+You will find the report and supporting files are in the `report` folder and source code in the `source` folder. The `main()` function is located in `project4.cpp` and you run this by selecting various modes. The modes are implemented in the `modes.cpp` file. Other stuff that is common to the modes are implemented in `utils.cpp`, and `utils.hpp` ties it all together.
 
 Parallelization of the `temp_range()` function is done in OpenMP, which is my preferred parallelization environment, and which I also think is the right choice since I am running all simulations on my laptop.
 

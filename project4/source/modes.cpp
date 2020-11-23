@@ -151,7 +151,7 @@ mat probability_distribution(int L, double entropy, double T,
   int num_accepted, idx;
   double E, M;
   double Eacc, E2acc;
-  double Emin = -2., Emax = 0.;
+  double Emin = -2., Emax = 2.;
   double dE;
   char *p, **lattice;
   double wij[17];
