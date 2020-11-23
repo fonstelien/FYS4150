@@ -1,0 +1,183 @@
+\documentclass[]{article}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{tabularx}
+\usepackage{hyperref}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+	%language=C++,
+	aboveskip=3mm,
+	belowskip=3mm,
+	showstringspaces=false,
+	columns=flexible,
+	basicstyle={\small\ttfamily},
+	numbers=none,
+	numberstyle=\tiny\color{gray},
+	keywordstyle=\color{blue},
+	commentstyle=\color{dkgreen},
+	stringstyle=\color{mauve},
+	breaklines=false,
+	breakatwhitespace=true,
+	tabsize=2
+}
+
+
+\title{FYS4150 H20 - Project 4:\\The 2-Dimensional Ising Model and \\Monte Carlo Simulations}
+\author{Olav Fønstelien}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+%The abstract gives the reader a quick overview of what has been done and the most important results. Try to be to the point and state your main findings. It could be structured as follows 
+% - Short introduction to topic and why its important 
+% - Introduce a challenge or unresolved issue with the topic (that you will try to solve) 
+% - What have you done to solve this 
+% - Main Results 
+% - The implications
+
+
+Please visit my GitHub repository \url{https://github.com/fonstelien/FYS4150/tree/master/project4} for the source code developed for this report.
+
+\end{abstract}
+
+\section{Introduction} \label{intro}
+%When you write the introduction you could focus on the following aspects
+% - Motivate the reader, the first part of the introduction gives always a motivation and tries to give the overarching ideas
+% - What I have done
+% - The structure of the report, how it is organized etc
+
+In this report we will study the Ising model and how this can be solved by statistical methods to show steady state conditions and phase transitions in two-dimensional magnetic systems. The model describes the binary state of each particle in a quadratic lattice. The state of each particle or \textit{spin} is either \textit{up} or \textit{down}, and the preferred state of each spin is to equal that of its four nearest neighbors in the lattice. The ground state is up, and one could maybe conclude that a lattice filled with ups makes for a boring model, but when applying an outer influence, like increasing the temperature, transitions away from the state of the neighbors become more likely. We would start to see scattered areas of downs in the lattice, and at one \textit{critical temperature} the complete breakdown of any order.
+
+We will develop a simulation model for solving the Ising model in two dimensions. Even if an analytical solution to the two-dimensional model exists, the simulation model is easily extended beyond this. The Ising model can be used to solve problems in the social sciences, where the \textit{state} of one individual is heavily influenced by the state of its nearest neighbors. As such, our study in this report could serve as an introduction to a more general method of solving problems of this nature.
+
+The model that we will develop uses the Monte Carlo method in combination with the Metropolis algorithm to simulate the distribution of ups and downs in an $L \times L$ lattice at a given temperature. We pick spins from the lattice by a stochastic process and decide whether to flip it or not -- \textit{yes} if the new state corresponds better to that of its neighbors; \textit{maybe} if not, to be decided by the Metropolis algorithm. We will see that this process, when repeated some tens to some hundred times over the lattice, forms a Markov process, with the lattice reaching its most likely state independently of its initial condition.
+
+% MORE ABOUT THE REPORT STRUCTURE!
+
+
+\section{Methods} \label{methods}
+% - Describe the methods and algorithms
+% - You need to explain how you implemented the methods and also say something about the structure of your algorithm and present some parts of your code
+% - You should plug in some calculations to demonstrate your code, such as selected runs used to validate and verify your results. The latter is extremely important!! A reader needs to understand that your code reproduces selected benchmarks and reproduces previous results, either numerical and/or well-known closed form expressions.
+
+% L=2. Find the analytical expression for the partition function and the corresponding expectations values for the energy E, the mean absolute value of the magnetic moment |M| (we will refer to this as the mean magnetization), the specific heat CV and the susceptibility χ as functions of T using periodic boundary conditions. These results will serve as benchmark calculations for our next steps. 
+
+The magnetic energy of the spins in a lattice depends on their neighbors, and the total energy $E$ of a lattice $\mathcal{L}$ is given by
+\begin{equation} \label{eq:e-sum}
+	E = -J \sum_{\langle kl \rangle} s_k s_l,
+\end{equation}
+where $\langle kl \rangle$ denotes all neighboring pairs of spins $s_k, s_l \in \{ -1, +1\}$ in the lattice. $J$ is the coupling constant and tell how strong the interrelation between the spins is.
+
+If we now let the lattice $\mathcal{L}$ be quadratic with $L \times L$ spins, the likelihood of any spin configuration $\mathcal{L}_i$ at a temperature $T$ is given by the Boltzmann probability distribution as
+\begin{equation} \label{eq:pi}
+	P_i = \frac{e^{-\beta E_i}}{Z}, \quad \text{where} \quad \beta = \frac{1}{k_BT}.
+\end{equation}
+$E_i$ is $\mathcal{L}_i$'s magnetic energy, as given by Equation (\ref{eq:e-sum}), and $Z$ is the partition function for the canonical ensemble, defined as
+\begin{equation}
+	Z(\beta) = \sum_{j=1}^{M} e^{-\beta E_j}, \quad \text{where} \quad M = 2^{L^2}.
+\end{equation}
+See \cite{fys-stk4155-notes}.
+
+We see from Equations (\ref{eq:e-sum}), (\ref{eq:pi}) that if we let -1 denote a spin's \textit{down} state and +1 denote \textit{up} state, with $J > 0$, the most likely state will be all ups, since this gives the lowest energy and hence highest probability, and at absolute zero temperature, this is how $\mathcal{L}$ will remain. However, increasing temperature will make other states more likely. 
+
+Increased kinetic energy will cause individual spins to flip, giving the lattice a new state $\mathcal{L}_j$ with energy $E_j$. The change in the lattice's energy by flipping spin $s_k$ is given by 
+\begin{equation}
+	\Delta E_{i \rightarrow j} = E_j - E_i = 2J s_k^{(i)} \sum_{\langle l \rangle} s_l,
+\end{equation}
+where $\langle l \rangle$ denotes $s_k$'s four neighbors and $s_k^{(i)}$ denotes its state in $\mathcal{L}_i$. This process can be described by a Markov chain
+\begin{equation} \label{eq:markov-chain}
+	\mathbf{w}_{t+1} = \mathbf{W} \mathbf{w}_{t},
+\end{equation}
+where $\mathbf{w}_t = \{w_i\} = \{P_i\}$ denotes $\cal{L}$'s (discrete) probability distribution at time $t$. $\mathbf{W} = \{W_{i \rightarrow j}\}$ denotes the transition probabilities for all possible transitions $\mathcal{L}_i \rightarrow \mathcal{L}_j$, and is unknown. To find this, we will re-phrase $W_{i \rightarrow j}$ as a stochastic process, where the likelihood $T_{i \rightarrow j}$ of a spin to be a \textit{candidate} for the flip is equal for all, and the likelihood that we \textit{accept} this spin to flip is $A_{i \rightarrow j}$;
+\begin{equation}
+	W_{i \rightarrow j} = T_{i \rightarrow j} A_{i \rightarrow j}.
+\end{equation}
+
+Transition the other way, $\mathcal{L}_j \rightarrow \mathcal{L}_i$, is also allowed. We let $W_{j \rightarrow i} = T_{j \rightarrow i} A_{j \rightarrow i}$, and by taking the right side of Equation (\ref{eq:markov-chain}) we get the so-called detailed balance 
+\begin{equation}
+	\frac{W_{i \rightarrow j}}{W_{j \rightarrow i}} 
+	= \frac{T_{i \rightarrow j} A_{i \rightarrow j}}{T_{j \rightarrow i} A_{j \rightarrow i}} 
+	= \frac{A_{i \rightarrow j}}{A_{j \rightarrow i}}
+	= \frac{w_j}{w_i} = \frac{P_j}{P_i} = e^{-\beta \Delta E_{i \rightarrow j}}.
+\end{equation}
+Now we use the Metropolis algorithm, which states that if $\Delta E_{i \rightarrow j} \le 0$, we flat out accept the transition, such that $A_{i \rightarrow j} = 1$, and hence $A_{j \rightarrow i} = e^{-\beta \Delta E_{j \rightarrow i}}$. The general form of the Metropolis algorithm becomes
+\begin{equation}
+	A_{j \rightarrow i} = 
+	\begin{cases}
+	1 &\text{if} \quad \Delta E_{i \rightarrow j} \le 0 \\
+	e^{-\beta \Delta E_{j \rightarrow j}} &\text{otherwise}
+	\end{cases}.
+\end{equation}
+
+We see that the Metropolis algorithm lets us simulate the spin distribution of the lattice without knowing the partition function $Z(\beta)$ in the state probability distribution $P_i$. If we allow ourselves some time, the initial state can be selected freely, since $\mathcal{L}$ is bound to reach its most likely state from any initial configuration. The transition probability $\mathbf{W}$ is a stochastic matrix, which means that it has a single largest eigenvalue $\lambda_{max} = \lambda_1 = 1$, and $\lambda_i < 1$ for the remaining \cite{fys-stk4155-notes}. If we let $\mathbf{v}_i$ denote the corresponding eigenvectors, we can write the initial probability distribution $\mathbf{w}_{0}$ as
+\begin{equation}
+	\mathbf{w}_{0} = \sum_{i} \alpha_i \mathbf{v}_i.
+\end{equation}
+After the first iteration we get
+\begin{equation}
+	\mathbf{w}_{1} = \mathbf{W} \mathbf{w}_{0} = \sum_{i} \lambda_i \alpha_i \mathbf{v}_i,
+\end{equation}
+and if we continue to the $p$th iteration
+\begin{equation}
+	\mathbf{w}_{p} = \mathbf{W}^p \mathbf{w}_{0} = \sum_{i} \lambda_i^p \alpha_i \mathbf{v}_i,
+\end{equation}
+it becomes obvious that we reach a limit where
+\begin{equation}
+	\mathbf{w}_{q} \approx \lambda_1^q \alpha_1 \mathbf{v}_1 = \alpha_1 \mathbf{v}_1.
+\end{equation}
+Since the $\sum_{i} P_i = 1$, $\alpha_1 = 1$, and we get
+\begin{equation}
+	\mathbf{w}_{r} = \mathbf{v}_1, \quad \text{for} \quad r \ge q.
+\end{equation}
+
+If we then take into consideration the finite numerical precision 
+, we have that after $n$ transitions
+
+
+\begin{equation}
+	\mathbf{w}_{1} = \mathbf{W} \mathbf{w}_{t}
+\end{equation}
+
+
+
+% Equations (13.6) and (13.7) of the lecture notes. Show that only five possible values of the energy differences ΔE are possible for the two-dimensional Ising model. Figure out how to encode efficiently the energy differences in the Boltzmann distribution. See the discussions in section 13.5 of the lecture notes. Why don't you need to calculate exp−ΔEβ each time you update the energy?
+
+
+% Write now a code for the Ising model which computes the mean energy E, mean magnetization |M|, the specific heat CV and the susceptibility χ as functions of T using periodic boundary conditions
+
+
+
+\clearpage
+\section{Results} \label{results}
+% - Present your results
+% - Give a critical discussion of your work and place it in the correct context.
+% - Relate your work to other calculations/studies
+% - An eventual reader should be able to reproduce your calculations if she/he wants to do so. All input variables should be properly explained.
+% - Make sure that figures and tables should contain enough information in their captions, axis labels etc so that an eventual reader can gain a first impression of your work by studying figures and tables only.
+
+% for L=2 in the x and y directions. Compare your results with the expressions from a) for a temperature T=1.0 (in units of kT/J).How many Monte Carlo cycles do you need in order to achieve a good agreeement? 
+
+
+
+
+\clearpage
+\section{Discussion and Conclusion} \label{conclusion}
+% - State your main findings and interpretations
+% - Try as far as possible to present perspectives for future work
+% - Try to discuss the pros and cons of the methods and possible improvements
+
+
+%\clearpage
+\bibliographystyle{unsrt}
+\bibliography{project2.bib}
+\end{document}
