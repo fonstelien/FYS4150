@@ -15,7 +15,7 @@ using namespace std;
 void print_usage() {
   cout << "usage: project4 [-h | R | E | P | L ] -lcesb" << endl;
   cout << " -h  prints this text" << endl;
-  cout << " -R  runs over temperature Range: '-R T1 dt T2'" << endl;
+  cout << " -R  runs over temperature Range: '-R T1 dT T2'" << endl;
   cout << " -E  runs Equilibration at given temp: -E T" << endl;
   cout << " -P  Probability distribution estimation at given temp: -P T" << endl;
   cout << " -L  outputs the Lattice at end of sim. for given temp: -L T" << endl;
