@@ -40,8 +40,8 @@ double magnetic_moment(int L, char **lattice) {
 /* Initializes metropolis acceptance rule vector with the Boltzmann distribution 
    for the energy change from state i->j at temp. T */
 void init_metropolis(double *wij, double T) {
-  wij[0] = std::exp(-BETA(T)*(-8));
-  wij[4] = std::exp(-BETA(T)*(-4));
+  wij[0] = std::exp(-BETA(T)*(-8));  // could set =1, but want to keep it due to BETA()
+  wij[4] = std::exp(-BETA(T)*(-4));  // macro, which could change at some point.
   wij[8] = 1.;
   wij[12] = std::exp(-BETA(T)*4);
   wij[16] = std::exp(-BETA(T)*8);
@@ -54,21 +54,21 @@ void metropolis(int L, char **lattice, double *wij, double &E, double &M, int &n
   int x,y;
   int dE;
   int b;
-  
-  for (int i = 0; i < L; i++)
-    for (int j = 0; j  < L; j++) {
-      x = dist(rng)*L;
-      y = dist(rng)*L;
-      dE = 2*lattice[x][y]*(lattice[PERIOD(x-1)][y] +	\
-			    lattice[PERIOD(x+1)][y] +	\
-			    lattice[x][PERIOD(y-1)] +   \
-			    lattice[x][PERIOD(y+1)]);
-      b = (int) (dist(rng) < wij[dE+8]);
-      num_accepted += b;
-      lattice[x][y] -= 2*b*lattice[x][y];
-      E += b*dE;
-      M += 2*b*lattice[x][y];
-    }
+
+  // One Monte Carlo cycle is a run through L*L Metropolis tests
+  for (int i = 0; i < L*L; i++) {
+    x = dist(rng)*L;
+    y = dist(rng)*L;
+    dE = 2*lattice[x][y]*(lattice[PERIOD(x-1)][y] +	\
+			  lattice[PERIOD(x+1)][y] +	\
+			  lattice[x][PERIOD(y-1)] +   \
+			  lattice[x][PERIOD(y+1)]);
+    b = (int) (dist(rng) < wij[dE+8]);
+    num_accepted += b;
+    lattice[x][y] -= 2*b*lattice[x][y];
+    E += b*dE;
+    M += 2*b*lattice[x][y];
+  }
 }
 
 /* Calculates the n-sample sample-mean of variable x, normalized to lattice size N=L*L. */
