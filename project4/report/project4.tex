@@ -50,7 +50,7 @@ Please visit my GitHub repository \url{https://github.com/fonstelien/FYS4150/tre
 
 \end{abstract}
 
-\section{Introduction} \label{intro}
+\section{Introduction} \label{sec:intro}
 %When you write the introduction you could focus on the following aspects
 % - Motivate the reader, the first part of the introduction gives always a motivation and tries to give the overarching ideas
 % - What I have done
@@ -65,7 +65,7 @@ The model that we will develop uses the Monte Carlo method in combination with t
 % MORE ABOUT THE REPORT STRUCTURE!
 
 
-\section{Methods} \label{methods}
+\section{Methods} \label{sec:methods}
 % - Describe the methods and algorithms
 % - You need to explain how you implemented the methods and also say something about the structure of your algorithm and present some parts of your code
 % - You should plug in some calculations to demonstrate your code, such as selected runs used to validate and verify your results. The latter is extremely important!! A reader needs to understand that your code reproduces selected benchmarks and reproduces previous results, either numerical and/or well-known closed form expressions.
@@ -88,7 +88,7 @@ If we now let the lattice $\mathcal{L}$ be quadratic with $L \times L$ spins, th
 	P_i = \frac{e^{-\beta E_i}}{Z}, \quad \text{where} \quad \beta = \frac{1}{k_BT}.
 \end{equation}
 $E_i$ is $\mathcal{L}_i$'s magnetic energy in this configuration, as given by Equation (\ref{eq:e-sum}), and $Z$ is the partition function for the canonical ensemble (see \cite{fys4150-notes}). The partition function is defined as
-\begin{equation}
+\begin{equation} \label{eq:partition-function}
 	Z(\beta) = \sum_{i=1}^{M} e^{-\beta E_i},
 \end{equation}
 where $M = 2^{L^2}$ and $i = 1,2,...,M$ denotes each of the possible configurations $\mathcal{L}_i$ that $\mathcal{L}$ may have.
@@ -225,6 +225,8 @@ Note that we accumulate the absolute value \lstinline|Mabs| of the magnetic mome
 
 Before we start sampling magnetic energy and moment with \lstinline|Eacc|, \lstinline|E2acc|, \lstinline|Macc| and \lstinline|M2acc|, we must let the model reach its steady state (equilibration). This is handled by running a number of cycles defined by the \lstinline|equilibration_cycles| parameter. The number of cycles to run before equilibration depends on the size of the lattice, its initial and target temperatures, and also the sequence of numbers coming from the random number generator. It can only be determined by trial and error, but equilibration will generally be slower for a larger lattice, and for a larger difference in initial and target temperatures.
 
+The equilibration process is a sequential process, but the sampling process can be parallelized without any influence on the results. It is important, however, that each process has its own random number generator to avoid oversamping.
+
 \begin{lstlisting}[caption={Solving the Ising model in two dimensions with Monte Carlo simulation and the Metropolis algorithm to approximate the mean values and variances of the magnetic energy and moment. Note that we accumulate the absolute value of the magnetic moment.},label={lst:ising},escapeinside={@}{@}] [!h]
 	// Declarations
 	Tinit : "initial temperature of the lattice"
@@ -255,6 +257,7 @@ Before we start sampling magnetic energy and moment with \lstinline|Eacc|, \lsti
 	// Sampling energy and magnetic moment
 	"Initialize E, Mabs"
 	"Set Eacc, Macc, E2acc, M2acc to 0"
+	"Parallelize FOR loop with individual RNGs; reduce Eacc, E2acc, etc"
 	FOR i = 1...monte_carlo_cycles DO
 		Eacc @$\leftarrow$@ Eacc + E
 		E2acc @$\leftarrow$@ E2acc + E*E
@@ -290,24 +293,133 @@ Before we start sampling magnetic energy and moment with \lstinline|Eacc|, \lsti
 
 
 \clearpage
-\section{Results} \label{results}
+\section{Results} \label{sec:results}
 % - Present your results
 % - Give a critical discussion of your work and place it in the correct context.
 % - Relate your work to other calculations/studies
 % - An eventual reader should be able to reproduce your calculations if she/he wants to do so. All input variables should be properly explained.
 % - Make sure that figures and tables should contain enough information in their captions, axis labels etc so that an eventual reader can gain a first impression of your work by studying figures and tables only.
 
+
+\subsection{Evaluation of the Model} \label{sec:eval-model}
 % for L=2 in the x and y directions. Compare your results with the expressions from a) for a temperature T=1.0 (in units of kT/J).How many Monte Carlo cycles do you need in order to achieve a good agreeement? 
+
+The partition function $Z(\beta)$ is prohibitively expensive to calculate for any lattice of more than a few spins in each direction. But to evaluate our model, we can let $L=2$, which leaves us with only $M = 2^4 = 16$ different configurations. As we see in Table \ref{tab:2x2-states}, they can be aggregated to six fundamental states.
+
+\begin{table}[!h]
+	\caption{Fundamental states of the $2 \times 2$ lattice.}
+	\label{tab:2x2-states}
+	\begin{center}
+		\begin{tabular}{c|c|c|c}
+			\toprule
+			\# up spins 		& \# configs		& energy	& moment	\\
+			\midrule
+			4				& 1				& -8J		& 4			\\
+			3				& 4				&  0		& 2			\\
+			2				& 4				&  0		& 0			\\
+			2				& 2				& +8J		& 0			\\
+			1				& 4				&  0		& -2		\\
+			0				& 1				& -8J		& -4		\\
+			\bottomrule
+		\end{tabular}
+	\end{center}
+\end{table}
+
+When we calculate the partition function for the $2 \times 2$ lattice, only three fundamental states exist. The function then becomes
+\begin{equation}
+	Z_{2 \times 2} (\beta) = 12 + 2e^{8J \beta} + 2e^{-8J \beta} = 12 + 4\cosh 8J\beta.
+\end{equation}
+For the magnetic energy the corresponding expectation value and variance become
+\begin{equation}
+\begin{aligned}
+	\mathbb{E}(E_{2 \times 2}) &= -\frac{32J}{Z_{2 \times 2}} \sinh 8J\beta \\
+	C_{V, 2 \times 2} &= \frac{1}{k_B T^2} \bigg( \frac{256J}{Z_{2 \times 2}} \cosh 8J\beta - \mathbb{E}^2(E_{2 \times 2}) \bigg) \\
+\end{aligned},
+\end{equation}
+and likewise for the magnetic moment; 
+\begin{equation}
+\begin{aligned}
+	\mathbb{E}(|\mathcal{M}_{2 \times 2}|) &= \frac{8J}{Z_{2 \times 2}} (2 + e^{8J\beta}) \\
+	\chi_{2 \times 2} &= \frac{1}{k_B T} \bigg( \frac{32J}{Z_{2 \times 2}} (1 + e^{8J\beta}) - \mathbb{E}^2(|\mathcal{M}_{2 \times 2}|) \bigg) \\
+\end{aligned}.
+\end{equation}
+Here, we state again that $\beta = \frac{1}{k_B T}$.
+
+In Tables \ref{tab:2x2-e-vals} and \ref{tab:2x2-m-vals} we see the results of the simulations for temperature $T=1.0$ $J/k_B$ over the range $10^1$ to $10^7$ Monte Carlo cycles. We see that the model produces the expected values, but that we need to run up to $10^5$ cycles to get good estimates of the expectation values. For the variances, the energy variance error is only $8.3 \cdot 10^{-3}$ for $10^7$ cycles, while the magnetic moment variance error never improves beyond about $10^{-2}$ -- it even starts to fluctuate when we reach $10^5$ cycles! 
+
+\begin{table}[!h]
+	\caption{Calculated energy for the $2 \times 2$ lattice at temperature $T=1.0$ $J/k_B$. We see that for the estimation of $\mathbb{E}(E)$, the error improves with a factor of about 10 up to $N = 10^5$, and a factor of 2 thereafter. For the estimation of $\sigma^2_E$, the error is about 100 times higher, and improvement is less for increasing $N$. True values are $\mathbb{E}(E) = -1.995982$ and $\sigma_E^2 = 3.208233 \cdot 10^{-2}$.}
+	\label{tab:2x2-e-vals}
+	\begin{center}
+	\begin{tabular}{r|rr|rr}
+		\toprule
+		log$_{10}$ $N$ & $\bar{\mu}_E$ & $\varepsilon$ & $\bar{\sigma}^2_E$ & $\varepsilon$ \\
+		\midrule
+		1 & -1.81818e+00 & 8.90791e-02 & 1.32231e+00 & 4.02163e+01 \\
+		2 & -1.98020e+00 & 7.90792e-03 & 1.56847e-01 & 3.88890e+00 \\
+		3 & -1.99201e+00 & 1.99105e-03 & 6.36806e-02 & 9.84911e-01 \\
+		4 & -1.99700e+00 & 5.10132e-04 & 2.39616e-02 & 2.53121e-01 \\
+		5 & -1.99586e+00 & 6.11451e-05 & 3.30511e-02 & 3.01967e-02 \\
+		6 & -1.99592e+00 & 3.01014e-05 & 3.25574e-02 & 1.48093e-02 \\
+		7 & -1.99602e+00 & 1.67910e-05 & 3.18149e-02 & 8.33595e-03 \\
+		\bottomrule
+	\end{tabular}
+	\end{center}
+\end{table}
+
+\begin{table}[!h]
+	\caption{Calculated magnetic moment values for the $2 \times 2$ lattice at temperature $T=1.0$ $J/k_B$. The same observations for the mean value can be done here as for the energy mean value in Table \ref{tab:2x2-e-vals}. For the variance, however, the error seem to hit a limit at around $10^4$, and it seems to be unstable after that. True values are $\mathbb{E}(|\mathcal{M}|) = 0.9986607$ and $\sigma_{|\mathcal{M}|}^2 = 4.010740 \cdot 10^{-3}$.}
+	\label{tab:2x2-m-vals}
+	\begin{center}
+		\begin{tabular}{r|rr|rr}
+			\toprule
+			log$_{10}$ $N$ & $\bar{\mu}_{|\mathcal{M}|}$ & $\varepsilon$ & $\bar{\sigma}^2_{|\mathcal{M}|}$ & $\varepsilon$ \\
+			\midrule
+			1 & 9.09091e-01 & 8.96899e-02 & 3.30579e-01 & 8.14233e+01 \\
+			2 & 9.90099e-01 & 8.57320e-03 & 3.92118e-02 & 8.77671e+00 \\
+			3 & 9.97003e-01 & 1.65996e-03 & 9.95408e-03 & 1.48186e+00 \\
+			4 & 9.98800e-01 & 1.39574e-04 & 4.19382e-03 & 4.56479e-02 \\
+			5 & 9.98560e-01 & 1.00853e-04 & 4.49166e-03 & 1.19908e-01 \\
+			6 & 9.98648e-01 & 1.27485e-05 & 4.02668e-03 & 3.97554e-03 \\
+			7 & 9.98673e-01 & 1.25342e-05 & 3.96926e-03 & 1.03425e-02 \\
+			\bottomrule
+		\end{tabular}
+	\end{center}
+\end{table}
+
+\begin{figure}[!h]
+	\centering
+	\includegraphics[width=1\linewidth]{./figs/2x2.png}
+	\caption{.}
+	\label{fig:2x2}
+\end{figure}
+
+
+\subsection{Reaching Equilibration} \label{sec:equilibration}
+%  lattice with L=20 spins in the x and y directions
+
+With the $2 \times 2$ lattice in the previous section, equilibration \textit{to} any temperature \textit{from} any temperature is a few cycles at most since the lattice will always be in one of the six possible fundamental configurations. A larger lattice allows more states, and therefore needs to reach equilibration before we can start sampling the magnetic energy and moment.
+
+
+
+
+\subsection{Approximation of the Probability Distribution} \label{sec:equilibration}
+
+
+\subsection{Finding the Phase Transition} \label{sec:equilibration}
+
+
 
 
 
 
 \clearpage
-\section{Discussion and Conclusion} \label{conclusion}
+\section{Discussion and Conclusion} \label{sec:conclusion}
 % - State your main findings and interpretations
 % - Try as far as possible to present perspectives for future work
 % - Try to discuss the pros and cons of the methods and possible improvements
 
+% MAGNETIC: For the variance, however, the error seem to hit a limit at around $10^4$, and it seems to be unstable after that.
 
 %\clearpage
 \bibliographystyle{unsrt}
