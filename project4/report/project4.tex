@@ -45,6 +45,9 @@
 % - Main Results 
 % - The implications
 
+This report gives presents a solution to the Ising model in two dimensions applied on a magnetic material. The model is interpreted as a reversible Markov process which is evolved using Monte Carlo simulation with the Metropolis algorithm as acceptance criteria. We show that the Markov process reaches its most likely state independently of initial state, and that these therefore may be selected freely -- however with a cost to equilibration time.
+
+We use a $2 \times 2$ lattice to show that the model approximates the expectation values and variances of magnetic energy and moment with precision up to $10^{-3}$, but that this requires $\ge 10^6$ Monte Carlo cycles. We also show that the model can be used to estimate the probability distribution of the lattice energy, and that it correctly reproduce the phase transition phenomena. The critical temperature of the infinite lattice, $T_C$, is approximated with an error of with an error of 0.31 \%.
 
 Please visit my GitHub repository \url{https://github.com/fonstelien/FYS4150/tree/master/project4} for the source code developed for this report.
 
@@ -56,11 +59,15 @@ Please visit my GitHub repository \url{https://github.com/fonstelien/FYS4150/tre
 % - What I have done
 % - The structure of the report, how it is organized etc
 
-In this report we will study the Ising model and how this can be solved by statistical methods to show steady state conditions and phase transitions in two-dimensional magnetic systems. The model describes the binary state of each particle in a quadratic lattice. The state of each particle or \textit{spin} is either \textit{up} or \textit{down}, and the preferred state of each spin is to equal that of its four nearest neighbors in the lattice. The ground state is up, and one could maybe conclude that a lattice filled with ups makes for a dull model, but when applying an outer influence, like increasing the temperature, transitions away from the state of the neighbors become more likely. We would start to see scattered areas of downs in the lattice, and at one \textit{critical temperature} the complete breakdown of any order.
+In this report we will study the Ising model and how this can be solved by statistical methods. The model describes the binary state of the particles in a quadratic lattice. The state of each particle or \textit{spin} is either \textit{up} or \textit{down}, and the preferred state of each spin is to equal that of its four nearest neighbors in the lattice. The ground state is up, and one could maybe conclude that a lattice filled with ups makes for a dull model, but when applying an outer influence, like increasing the temperature, transitions away from the state of the neighbors become more likely. We would start to see scattered areas of downs in the lattice, a tendency which would only increase towards a complete random configuration as $T \rightarrow \infty$.
 
-We will develop a simulation model for solving the Ising model in two dimensions. Even if an analytical solution to the two-dimensional model exists, the simulation model is easily extended beyond this. The Ising model can be used to solve problems in the social sciences, where the \textit{state} of one individual is heavily influenced by the state of its nearest neighbors. As such, our study in this report could serve as an introduction to a more general method of solving problems of this nature.
+We will develop a simulation model for solving the Ising model in two dimensions. Even if an analytical solution to the two-dimensional model exists, the simulation model is easily extended beyond this. In this report we will study the Ising model applied on a magnetic material. We will use it to show steady state conditions and phase transitions by changing the temperature and extent of the lattice. 
 
-The model that we will develop uses the Monte Carlo method in combination with the Metropolis algorithm to simulate the distribution of ups and downs in an $L \times L$ lattice at a given temperature. We pick spins from the lattice by a stochastic process and decide whether to flip it or not -- \textit{yes} if the new state corresponds better to that of its neighbors; \textit{maybe} if not, to be decided by the Metropolis algorithm. We will see that this process, when repeated some tens to some hundred times over the lattice, forms a Markov process, with the lattice reaching its most likely state independently of its initial condition.
+However, the Ising model can also be used to solve problems in the social sciences, where the \textit{state} of one individual is heavily influenced by the state of its nearest neighbors. As such, our study in this report could serve as an introduction to a more general method of solving problems of this nature.
+
+The model that we will develop uses the Monte Carlo method in combination with the Metropolis algorithm to simulate the distribution of ups and downs in an $L \times L$ lattice at a given temperature. We pick spins from the lattice by a stochastic process and decide whether to flip it or not -- \textit{yes} if the new state corresponds better to that of its neighbors; \textit{maybe} if not -- to be decided by the Metropolis algorithm. We will see that this process, when repeated some tens to some hundred times over the lattice, forms a Markov process, with the lattice reaching its most likely state independently of its initial condition.
+
+We will start with a review of the mathematics needed to develop our model in Section \ref{sec:methods}, where we also give the outline of an efficient implementation in a computer program. Then we present results from the simulations of different lattice sizes and temperatures, including the effects of initial conditions, and an approximation of the probability distribution of the spin configuration in Section \ref{sec:results}. We end by summarizing our findings and drawing conclusions with some thoughts about future work in Section \ref{sec:conclusion}.
 
 % MORE ABOUT THE REPORT STRUCTURE!
 
@@ -300,6 +307,9 @@ The equilibration process is a sequential process, but the sampling process can 
 % - An eventual reader should be able to reproduce your calculations if she/he wants to do so. All input variables should be properly explained.
 % - Make sure that figures and tables should contain enough information in their captions, axis labels etc so that an eventual reader can gain a first impression of your work by studying figures and tables only.
 
+The 2x2 lattice is the most demanding model, since it has very few fundamental states and all spins are on the edge of the lattice, which puts our boundary conditions to the test.
+
+
 
 \subsection{Evaluation of the Model} \label{sec:eval-model}
 % for L=2 in the x and y directions. Compare your results with the expressions from a) for a temperature T=1.0 (in units of kT/J).How many Monte Carlo cycles do you need in order to achieve a good agreeement? 
@@ -330,12 +340,12 @@ When we calculate the partition function for the $2 \times 2$ lattice, only thre
 	Z_{2 \times 2} (\beta) = 12 + 2e^{8J \beta} + 2e^{-8J \beta} = 12 + 4\cosh 8J\beta.
 \end{equation}
 For the magnetic energy the corresponding expectation value and variance become
-\begin{equation}
+\begin{equation} \label{eq:energy-analytical}
 \begin{aligned}
 	\mathbb{E}(E_{2 \times 2}) &= -\frac{32J}{Z_{2 \times 2}} \sinh 8J\beta \\
 	C_{V, 2 \times 2} &= \frac{1}{k_B T^2} \bigg( \frac{256J}{Z_{2 \times 2}} \cosh 8J\beta - \mathbb{E}^2(E_{2 \times 2}) \bigg) \\
 \end{aligned},
-\end{equation}
+\end{equation} \label{eq:moment-analytical}
 and likewise for the magnetic moment; 
 \begin{equation}
 \begin{aligned}
@@ -441,9 +451,9 @@ We should note that this result depends on that each process draws the same sequ
 \subsection{Approximation of the Probability Distribution} \label{sec:equilibration}
 As we saw in Equation (\ref{eq:pi}) in Section \ref{sec:methods}, calculation of a lattice's probability distribution $P(\beta)$ involves evaluating the partition function $Z(\beta)$, which is prohibitively time consuming. Measuring it by simulation, on the other hand, involves only that we sample the configuration energies and sort them from lowest to highest.
 
-Figure \ref{fig:20x20-prob-dist} shows the probability distributions at temperatures $T = 1.0$ $J/k_B$ and $T = 2.4$ $J/k_B$ for our $20 \times 20$ lattice. We have sampled the energy after every Monte Carlo cycle for $10^4$, $10^5$ and $10^6$ cycles. Note the different scales on the $x$ axes. 
+Figure \ref{fig:20x20-prob-dist} shows the probability distributions at temperatures $T = 1.0$ $J/k_B$ and $T = 2.4$ $J/k_B$ for our $20 \times 20$ lattice. We have sampled the energy after every Monte Carlo cycle for $10^4$, $10^5$ and $10^6$ cycles. We have allowed $10^3$ cycles for the equilibration of the model. Note the different scales on the $x$ axes. 
 
-As expected from the discussion in the previous section, the distribution is concentrated to the left at lower temperatures, with only about one in hundred cycles having a single down spin and one in thousand having three. Increasing the temperature shifts the distribution to higher energies and also makes it broader. This is reflected in the higher variance of approximately 8.2, which is around 0.025 for the low temperature in the best estimate, and corresponds well to our Figures \ref{fig:20x20-config-energy}, \ref{fig:20x20-flips-per-cycle} and \ref{fig:20x20-config-spins}.
+As expected from the discussion in the previous section, the distribution is concentrated to the left at lower temperatures, with only about one in one hundred cycles having a single down spin and one in one thousand having three. We see that increasing the temperature shifts the distribution to higher energies and also makes it broader. This is reflected in the higher variance of approximately 8.2, which is around 0.025 for the low temperature in the best estimate, and corresponds well to our Figures \ref{fig:20x20-config-energy}, \ref{fig:20x20-flips-per-cycle} and \ref{fig:20x20-config-spins}.
 
 \begin{figure}[!h]
 	\centering
@@ -452,12 +462,53 @@ As expected from the discussion in the previous section, the distribution is con
 	\label{fig:20x20-prob-dist}
 \end{figure}
 
-\subsection{Finding the Phase Transition} \label{sec:equilibration}
+\subsection{Finding the Phase Transitions} \label{sec:equilibration}
+We have seen that at low temperatures, all or almost all spins are aligned up, and as temperature in the lattice increases, scattered areas of downs appear. See Figure \ref{fig:20x20-config-spins}. In an infinite lattice, this process reaches a critical temperature $T_C$, where the $\mathbb{E}(\mathcal{M})$ abruptly goes to zero. Any increase beyond this temperature makes the scattered areas of up and down spins smaller until $T \rightarrow \infty$, where complete randomness prevails.
+
+Our simulation model must have finite extension to be of any use to us, but we will not observe the same abrupt changes in mean magnetization. The critical temperature is still visible to us, especially in the heat capacity, but it is shifted to a higher temperature. See Figure \ref{fig:2x2-mum-cv}, where we have plotted the analytical mean magnetic moment and heat capacity for a $2 \times 2$ lattice using Equations (\ref{eq:energy-analytical}) and (\ref{eq:moment-analytical}). 
+
+\begin{figure}[!h]
+	\centering
+	\includegraphics[width=1\linewidth]{./figs/2x2-mum-cv.png}
+	\caption{Plots of the analytical magnetic moment expectation value and heat capacity for a $2 \times 2$ lattice as a function of $T$. The critical temperature $T_C \approx 2.269$ $J/k_B$ of the infinite lattice is indicated by the vertical dotted line. The critical temperature is shifted to a higher temperature for any finite lattice.}
+	\label{fig:2x2-mum-cv}
+\end{figure}
+
+The critical temperature $T_C^{(\infty)}$ of the infinite lattice is indicated by the vertical line, while the critical temperature $T_C^{(2 \times 2)}$ occurs at the maximum value of the heat capacity. The relation between the critical temperatures of the finite and the infinite lattices are given by
+\begin{equation}
+	T_C^{(L \times L)} - T_C^{(\infty)} = \frac{\alpha}{L},
+\end{equation}
+where $\alpha$ is an unknown constant and $L$ is the lattice size. See \cite{fys4150-p4}. By running simulations with two lattice sizes $L_1, L_2$, we find the infinite lattice critical temperature as 
+\begin{equation}
+	T_C^{(\infty)} = \frac{L_1 T_C^{(L_1 \times L_1)} - L_2 T_C^{(L_2 \times L_2)}}{L_1 - L_2}.
+\end{equation}
+
+Figure \ref{fig:temp-range-all} shows plots of the approximated properties for lattice sizes $L=40$, 60, 80 and 100. We have made two runs for each lattice size. First once over a wide range $T \in [2.0, 2.35]$ with step size $dT = 0.05$ and $1 \times 10^5$ samples at each step. Then in a narrower range $T \in [2.25, 2.35]$ steps $dT = 0.01$ and $2 \times 10^5$ samples to get a finer precision. 
+
+In the upper right pane we see that the mean magnetic moment drops off sharper for increased lattice size, corresponding well with what we would expect. We also see that the peak in the heat capacities and susceptibilities seem to move left towards $T_C^{(\infty)}$, which again is indicated by the vertical line. The expected tendency is that larger $L$ should move the peak closer to $T_C^{(\infty)}$, but from these results, that is not clear.
+
+For the $80 \times 80$ and $100 \times 100$ lattices. the peaks seem to lay in the [2.27, 2.29] range. We narrow our search further to only include these two lattices, and run simulations at each step $dT = 0.002$ with $1 \times 10^6$ samples. 
+
+The results are shown in Figure \ref{fig:temp-range-unall}. Still, the curves do not show a smooth development, fluctuating up to 5-6 \% for the $100 \times 100$ lattice. But picking the maximum values gives a fairly good estimate
+\begin{equation}
+	T_C^{(\infty)} \approx \frac{100 \cdot 2.278 - 80 \cdot 2.282}{100 - 80} = 2.262,
+\end{equation}
+which deviates about 0.31 \% from the analytical value $T_C^{(\infty)} = 2/\ln (1 + \sqrt{2}) \approx 2.269$ $J/k_B$ \cite{fys4150-p4}.
+
+\begin{figure}[!h]
+	\centering
+	\includegraphics[width=1\linewidth]{./figs/temp-range-all.png}
+	\caption{Simulations over temperature range with different lattice sizes. The dotted lines indicate the first run with lower sampling, and the full lines the second run with higher sampling. The critical temperature for each lattice $T_C^{(L \times L)}$ are best visible as the peaks in the heat capacities and susceptibilities (bottom panes).}
+	\label{fig:temp-range-all}
+\end{figure}
 
 
-
-
-
+\begin{figure}[!h]
+	\centering
+	\includegraphics[width=.5\linewidth]{./figs/temp-range-unall.png}
+	\caption{Narrowed search for the critical temperature with finer steps and higher sampling than in Figure \ref{fig:temp-range-all}. Still, the heat capacity estimates do not have a smooth development, but the approximation of $T_C^{(\infty)}$ deviates only 0.31 \% from the analytical value.}
+	\label{fig:temp-range-unall}
+\end{figure}
 
 \clearpage
 \section{Discussion and Conclusion} \label{sec:conclusion}
@@ -465,7 +516,19 @@ As expected from the discussion in the previous section, the distribution is con
 % - Try as far as possible to present perspectives for future work
 % - Try to discuss the pros and cons of the methods and possible improvements
 
-% MAGNETIC: For the variance, however, the error seem to hit a limit at around $10^4$, and it seems to be unstable after that.
+We have shown that the two-dimensional Ising model can be interpreted as a reversible Markov process. We have used Monte Carlo simulations with the Metropolis algorithm as acceptance criteria for evolving the process, and seen that it converges towards its most likely state, independently of the initial conditions. As such, the initial conditions can be selected freely, but the equilibration time will depend on our selection.
+
+We have seen that the configuration of spins starts with almost all being in the up state at low temperatures, and that increasing temperature leads to higher number of downs. We have also seen that the ups and downs tend to form patches, corresponding well to the spins' preference of attaining the same state as their nearest neighbors.
+
+Monte Carlo simulation can also be used to approximate the probability distribution of the spin configuration, expressed as the configuration energy $E_i$. The distribution is heavily weighted towards the lower energy limit $-2J$ per spin at lower temperatures, and moves to higher energies as temperature increases. We have seen that this corresponds to increased variance, meaning that the distribution broadens. This is a consequence of the increased kinetic energy which means that more energy states are likely to occur. The higher energy limit of the lattice is $+2J$ per spin, but the mean value of the distribution will never move 0, since that corresponds to $T \rightarrow \infty$.
+
+For a small lattice of $2 \times 2$ spins, where analytical expressions are easily attained, we have shown that our model approximates the magnetic energy and moment expectation value and variance with high precision, but that this requires $> 10^6$ Monte Carlo cycles. Proofing our model on the $2 \times 2$ lattice has the added benefit of putting our model to the test with regards to the correct implementation of boundary values, since all spins are one the edge of the lattice.
+
+Finally, we have shown that our model correctly reproduces the critical temperature, which in an infinite lattice leads to phase transition (the magnetic moment goes to zero). Based on our simulations, we estimated the analytical critical temperature with an error of 0.31  \%.
+
+\vspace{5mm}
+
+As an extension of the study done in this report, it would be interesting to look at how the Ising model could be used in other settings. Many phenomena present themselves as scattered continuous areas of equal orientation. These may be the formation of ice on a pond or the electoral map of USA, and further insight into the Ising model, by tuning of the coupling $J$ or extension into higher dimensions could help solve such problems.
 
 %\clearpage
 \bibliographystyle{unsrt}
