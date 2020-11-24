@@ -8,9 +8,6 @@ using namespace std;
 #define PROBABILITY 3
 #define LATTICE_OUT 4
 
-// Maximum number of stored samples
-#define MAX_SAMPLES 1000
-
 /* Prints program usage */
 void print_usage() {
   cout << "usage: project4 [-h | R | E | P | L ] -lcesb" << endl;
@@ -21,7 +18,7 @@ void print_usage() {
   cout << " -L  outputs the Lattice at end of sim. for given temp: -L T" << endl;
   cout << " -l  side length of lxl lattice. Default l=20" << endl;
   cout << " -c  cycles in simulation" << endl;
-  cout << " -e  equilibration cycles for opts -R and -P. Default e=c/10" << endl;
+  cout << " -e  equilibration cycles for opts -REP. Default e=c/10" << endl;
   cout << " -s  initial entropy in range [0.0,1.0]" << endl;
   cout << " -b  number of bins in the prob. density estimation for -P. Default b=20" << endl;
   cout << endl;
@@ -118,7 +115,7 @@ int main(int argc, char *argv[]) {
     break;
 
   case EQUILIBRATION:
-    results = equilibration(L, entropy, T1, cycles);
+    results = equilibration(L, entropy, T1, cycles, equilibration_cycles);
     break;
 
   case PROBABILITY:
@@ -147,7 +144,7 @@ int main(int argc, char *argv[]) {
     break;
 
   case EQUILIBRATION:
-    cout << "c,E,CV,Mabs,Chi,M,accs" << endl;
+    cout << "c,E,CV,Mabs,Chi,M,accs,Eraw" << endl;
     results.save(cout, csv_ascii);
     break;
 

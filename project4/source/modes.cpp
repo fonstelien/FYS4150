@@ -74,9 +74,9 @@ mat temp_range(int L, double entropy, double T1, double dT, double T2,
 
 /* Runs Monte Carlo simulations over LxL lattice at temp. T for given number of cycles. 
    Returns result arma::mat */
-mat equilibration(int L, double entropy, double T, int cycles) {
+mat equilibration(int L, double entropy, double T, int cycles, int equilibration_cycles) {
   mat results;
-  int n, mod, num_accepted;
+  int n, k, mod, num_accepted;
   double E, M;
   double Eacc, E2acc, Macc, M2acc, Macc_abs;
   char *p, **lattice;
@@ -85,17 +85,18 @@ mat equilibration(int L, double entropy, double T, int cycles) {
   uniform_real_distribution<double> dist(0.,1.);
 
   // Setting up results matrix
-  if (cycles < MAX_SAMPLES) {
-    n = cycles;
+  if (cycles+equilibration_cycles < MAX_SAMPLES) {
+    n = cycles + equilibration_cycles;
     mod = 1;
   }
   else {
     n = MAX_SAMPLES;
-    mod = cycles/MAX_SAMPLES;
-    if (cycles % MAX_SAMPLES)
+    mod = (cycles+equilibration_cycles)/MAX_SAMPLES;
+    if ((cycles+equilibration_cycles) % MAX_SAMPLES)
       mod++;
   }
-  results = mat(n, 7); // c, E, CV, Mabs, Chi, M, acc
+  results = mat(n, 8); // c, E, CV, Mabs, Chi, M, acc, Eraw
+  results.zeros();
 
   // Set up lattice structure
   p = (char *) calloc(L*L, sizeof(char));
@@ -108,26 +109,37 @@ mat equilibration(int L, double entropy, double T, int cycles) {
   // Initializing
   init_metropolis(wij, T);
   init_spins(L, entropy, lattice);
-
-  // Monte Carlo simulation
   E = energy(L, lattice);
   M = magnetic_moment(L, lattice);
+
+  // Monte Carlo simulation
+  k = 0;
+  for (int c = 0; c < equilibration_cycles; c++) {  // thermalizing...
+    if (c % mod == 0) {
+      results(k,0) = c;
+      results(k,6) = num_accepted;
+      results(k,7) = E/(L*L);
+      k++;
+    }
+    metropolis(L, lattice, wij, E, M, num_accepted, dist, rng);
+  }
+
   Eacc = E2acc = Macc = M2acc = Macc_abs = 0.;
-  int k = 0;
   for (int c = 0; c < cycles; c++) {
     Eacc += E;
     E2acc += E*E;
     Macc += M;
     M2acc += M*M;
     Macc_abs += fabs(M);
-    if (c % mod == 0) {
-      results(k,0) = c;
+    if ((c+equilibration_cycles) % mod == 0) {
+      results(k,0) = c + equilibration_cycles;
       results(k,1) = sample_mean(Eacc, c+1, L);
       results(k,2) = sample_var(E2acc, Eacc, c+1, L)/(T*T);
       results(k,3) = sample_mean(Macc_abs, c+1, L);
       results(k,4) = sample_var(M2acc, Macc_abs, c+1, L)/T;
       results(k,5) = sample_mean(Macc, c+1, L);
       results(k,6) = num_accepted;
+      results(k,7) = E/(L*L);
       k++;
     }
     num_accepted = 0;

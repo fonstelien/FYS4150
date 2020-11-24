@@ -29,6 +29,7 @@
 using namespace std;
 using namespace arma;
 
+/* =================================================================================== */
 /* From utils.cpp */
 
 /* Initializes lattice. Spins are either 1 (up) or -1 (down). Entropy s/2 is the 
@@ -61,6 +62,7 @@ double sample_var(double x2, double x, int n, int L);
 void plot_lattice(int L, char **lattice);
 
 
+/* =================================================================================== */
 /* From modes.cpp */
 
 /* Loops over temperature range T1 to T2 with steps dT. Lattice size LxL. 
@@ -71,7 +73,7 @@ mat temp_range(int L, double entropy, double T1, double dT, double T2,
 
 /* Runs Monte Carlo simulations over LxL lattice at temp. T for given number of cycles. 
    Returns result arma::mat */
-mat equilibration(int L, double entropy, double T, int cycles);
+mat equilibration(int L, double entropy, double T, int cycles, int equilibration_cycles);
 
 /* Estimation of the probability distribution at temperature T. 
    Returns result arma::mat with bins. Simulation runs for equilibration_cycles before 
