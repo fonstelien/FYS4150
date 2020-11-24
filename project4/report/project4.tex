@@ -72,45 +72,48 @@ The model that we will develop uses the Monte Carlo method in combination with t
 
 % L=2. Find the analytical expression for the partition function and the corresponding expectations values for the energy E, the mean absolute value of the magnetic moment |M| (we will refer to this as the mean magnetization), the specific heat CV and the susceptibility χ as functions of T using periodic boundary conditions. These results will serve as benchmark calculations for our next steps. 
 
-The magnetic energy of the spins in a lattice depends on their neighbors, and the total energy $E$ of a lattice $\mathcal{L}$ is given by
+The magnetic energy of the spins in a lattice depends on their neighbors. The total energy $E$ of a lattice $\mathcal{L}$ is given by
 \begin{equation} \label{eq:e-sum}
 	E = -J \sum_{\langle kl \rangle} s_k s_l,
 \end{equation}
-where $\langle kl \rangle$ denotes all neighboring pairs of spins $s_k, s_l \in \{ -1, +1\}$ in the lattice. $J$ is the coupling constant and tell how strong the interrelation between the spins is. The magnetic moment of the lattice is
+where $\langle kl \rangle$ denotes all neighboring pairs of spins $s_k, s_l \in \{ -1, +1\}$ in the lattice. $J$ is the coupling constant and tells how strong the interrelation between the spins is. In this report we will assume that $J > 0$. The magnetic moment of the lattice is
 \begin{equation} \label{eq:m-sum}
-	\mathcal{M} = \sum_{k} s_k.
+	\mathcal{M} = \sum_{k} s_k;
 \end{equation}
+a simple sum over all spins in the lattice.
 
 
 If we now let the lattice $\mathcal{L}$ be quadratic with $L \times L$ spins, the likelihood of any spin configuration $\mathcal{L}_i$ at a temperature $T$ is given by the Boltzmann probability distribution as
 \begin{equation} \label{eq:pi}
 	P_i = \frac{e^{-\beta E_i}}{Z}, \quad \text{where} \quad \beta = \frac{1}{k_BT}.
 \end{equation}
-$E_i$ is $\mathcal{L}_i$'s magnetic energy in this configuration, as given by Equation (\ref{eq:e-sum}), and $Z$ is the partition function for the canonical ensemble. This is defined as
+$E_i$ is $\mathcal{L}_i$'s magnetic energy in this configuration, as given by Equation (\ref{eq:e-sum}), and $Z$ is the partition function for the canonical ensemble (see \cite{fys4150-notes}). The partition function is defined as
 \begin{equation}
 	Z(\beta) = \sum_{i=1}^{M} e^{-\beta E_i},
 \end{equation}
-where $M = 2^{L^2}$ and $i = 1,2,...,M$ again denotes each of the possible configurations $\mathcal{L}_i$ that $\mathcal{L}$ may have. See \cite{fys-stk4155-notes}.
+where $M = 2^{L^2}$ and $i = 1,2,...,M$ denotes each of the possible configurations $\mathcal{L}_i$ that $\mathcal{L}$ may have.
 
-We see from Equations (\ref{eq:e-sum}), (\ref{eq:pi}) that if we let -1 denote a spin's \textit{down} state and +1 denote \textit{up} state, with $J > 0$, the most likely state will be all ups, since this gives the lowest energy and hence highest probability, and at absolute zero temperature, this is how $\mathcal{L}$ will remain. However, increasing temperature will make other states more likely. 
+We see from Equations (\ref{eq:e-sum}), (\ref{eq:pi}) that if we let -1 denote a spin's \textit{down} state and +1 denote its \textit{up} state, the most likely state will be all ups, since this gives the lowest energy and hence highest probability, and at absolute zero temperature, this is how $\mathcal{L}$ will remain. 
 
-Increased kinetic energy will cause individual spins to flip, giving the lattice a new state $\mathcal{L}_j$ with energy $E_j$. This process can be described by a Markov chain
+However, increasing temperature will make other states more likely. Increased kinetic energy will cause individual spins to flip, giving the lattice a new state $\mathcal{L}_j$ with energy $E_j$. This process can be described by a Markov chain
 \begin{equation} \label{eq:markov-chain}
 	\mathbf{w}_{t+1} = \mathbf{W} \mathbf{w}_{t},
 \end{equation}
-where $\mathbf{w}_t = \{w_i\} = \{P_i\}$ denotes $\cal{L}$'s (discrete) probability distribution at time $t$. $\mathbf{W} = \{W_{i \rightarrow j}\}$ denotes the transition probabilities for all possible transitions $\mathcal{L}_i \rightarrow \mathcal{L}_j$, and is unknown. To find this, we will re-phrase $W_{i \rightarrow j}$ as a stochastic process, where the likelihood $T_{i \rightarrow j}$ of a spin to be a \textit{candidate} for the flip is equal for all, and the likelihood that we \textit{accept} this spin to flip is $A_{i \rightarrow j}$;
+where $\mathbf{w}_t = \{w_i\} = \{P_i\}$ denotes $\cal{L}$'s (discrete) probability distribution at time $t$. $\mathbf{W} = \{W_{i \rightarrow j}\}$ denotes the transition probabilities for all possible transitions $\mathcal{L}_i \rightarrow \mathcal{L}_j$, and is unknown. To overcome this, we will re-phrase $W_{i \rightarrow j}$ as a stochastic process, where the likelihood $T_{i \rightarrow j}$ of a spin to be a \textit{candidate} for the flip is equal for all, and the likelihood that we \textit{accept} this spin to flip is $A_{i \rightarrow j}$. That is;
 \begin{equation}
 	W_{i \rightarrow j} = T_{i \rightarrow j} A_{i \rightarrow j}.
 \end{equation}
 
-Transition the other way, $\mathcal{L}_j \rightarrow \mathcal{L}_i$, is also allowed. We let $W_{j \rightarrow i} = T_{j \rightarrow i} A_{j \rightarrow i}$ denote the reverse process, and by taking the right side of Equation (\ref{eq:markov-chain}) we get the so-called detailed balance 
+Transition the other way, $\mathcal{L}_j \rightarrow \mathcal{L}_i$, is also allowed. We let $W_{j \rightarrow i} = T_{j \rightarrow i} A_{j \rightarrow i}$ denote the reverse process, and by taking the right side of Equation (\ref{eq:markov-chain}) we get the so-called detailed balance;
 \begin{equation}
 	\frac{W_{i \rightarrow j}}{W_{j \rightarrow i}} 
 	= \frac{T_{i \rightarrow j} A_{i \rightarrow j}}{T_{j \rightarrow i} A_{j \rightarrow i}} 
 	= \frac{A_{i \rightarrow j}}{A_{j \rightarrow i}}
-	= \frac{w_j}{w_i} = \frac{P_j}{P_i} = e^{-\beta \Delta E_{i \rightarrow j}},
+	= \frac{w_j}{w_i} = \frac{P_j}{P_i} = e^{-\beta \Delta E_{i \rightarrow j}}.
 \end{equation}
-where $\Delta E_{i \rightarrow j} = E_j - E_i$. Now we use the Metropolis algorithm, which states that if $\Delta E_{i \rightarrow j} \le 0$, we flat out accept the transition, such that $A_{i \rightarrow j} = 1$, and the likelihood that we accept the reverse becomes $A_{j \rightarrow i} = e^{-\beta \Delta E_{j \rightarrow i}}$. The general form of the Metropolis algorithm becomes
+Here, $\Delta E_{i \rightarrow j}$ denotes the change in energy between state $\mathcal{L}_i$ and $\mathcal{L}_j$, $\Delta E_{i \rightarrow j} = E_j - E_i$. 
+
+We will use the Metropolis algorithm to establish the two unknowns $A_{i \rightarrow j}$ and $A_{j \rightarrow i}$. The Metropolis algorithm states that if $\Delta E_{i \rightarrow j} \le 0$, we flat out accept the transition, such that $A_{i \rightarrow j} = 1$. The likelihood that we accept the reverse then becomes $A_{j \rightarrow i} = e^{-\beta \Delta E_{j \rightarrow i}}$, which gives us the general form of the Metropolis algorithm;
 \begin{equation} \label{eq:metropolis}
 	A_{i \rightarrow j} = 
 	\begin{cases}
@@ -118,7 +121,8 @@ where $\Delta E_{i \rightarrow j} = E_j - E_i$. Now we use the Metropolis algori
 	e^{-\beta \Delta E_{i \rightarrow j}} &\text{otherwise}
 	\end{cases}.
 \end{equation}
-The Metropolis algorithm is then used in another stochastic process, where we draw random numbers $r_i \sim \mathcal{U}(0,1)$. The result of the Metropolis algorithm, whether to accept the candidate flip or not, becomes
+
+The decision whether to accept the flip on not is then made in another stochastic process. In each iteration we draw a new random  number $r_i \sim \mathcal{U}(0,1)$ and apply it to the Metropolis algorithm. The outcome is then summarized by the following rules:
 \begin{equation} \label{eq:metropolis-accept-or-not}
 \begin{aligned}
 	r_i &< A_{i \rightarrow j} \rightarrow \text{accepted} \\
@@ -128,7 +132,7 @@ The Metropolis algorithm is then used in another stochastic process, where we dr
 
 \vspace{5mm}
 
-The transition probability $\mathbf{W}$ is a stochastic matrix, which means that it has a single largest eigenvalue $\lambda_{max} = \lambda_1 = 1$, and $\lambda_i < 1$ for the remaining \cite{fys-stk4155-notes}. If we let $\mathbf{v}_i$ denote the corresponding eigenvectors, we can write the initial probability distribution $\mathbf{w}_{0}$ as
+The transition probability $\mathbf{W}$ is a stochastic matrix, which means that it has a single largest eigenvalue $\lambda_{max} = \lambda_1 = 1$, and $\lambda_i < 1$ for the remaining \cite{fys4150-notes}. If we let $\mathbf{v}_i$ denote the corresponding eigenvectors, we can write the initial probability distribution $\mathbf{w}_{0}$ as
 \begin{equation}
 	\mathbf{w}_{0} = \sum_{i} \alpha_i \mathbf{v}_i.
 \end{equation}
@@ -136,23 +140,19 @@ After the first iteration we get
 \begin{equation}
 	\mathbf{w}_{1} = \mathbf{W} \mathbf{w}_{0} = \sum_{i} \lambda_i \alpha_i \mathbf{v}_i,
 \end{equation}
-and if we continue to the $p$th iteration
-\begin{equation}
-	\mathbf{w}_{p} = \mathbf{W}^p \mathbf{w}_{0} = \sum_{i} \lambda_i^p \alpha_i \mathbf{v}_i,
-\end{equation}
-it becomes obvious that we reach a limit where
+and if we continue to the $p$th iteration, $\mathbf{w}_{p} = \mathbf{W}^p \mathbf{w}_{0} = \sum_{i} \lambda_i^p \alpha_i \mathbf{v}_i$, it becomes obvious that we reach a limit where
 \begin{equation}
 	\mathbf{w}_{q} \approx \lambda_1^q \alpha_1 \mathbf{v}_1 = \alpha_1 \mathbf{v}_1.
 \end{equation}
-Since $\sum_{i} P_i = 1$, we must have $\alpha_1 = 1$, and we get
+Since the sum of the probability distribution in $\mathbf{v}_1$ must be equal to 1, $\sum_{i} P_i = 1$, we must have $\alpha_1 = 1$. We then get that
 \begin{equation} \label{eq:steady-state}
-	\mathbf{w}_{t} = \mathbf{v}_1, \quad \text{for} \quad t \ge q.
+	\mathbf{w}_{t} = \mathbf{v}_1, \quad \text{for} \quad t \ge q,
 \end{equation}
-Thus, after sufficient iterations, the probability distribution vector $\mathbf{w}_{t}$ becomes independent on the initial conditions $\mathbf{w}_{0}$. This means that if we allow ourselves enough time, the initial state can be selected freely, since $\mathcal{L}$ is bound to reach its most likely state from any initial configuration. 
+which means that after sufficient iterations, the probability distribution vector $\mathbf{w}_{t}$ becomes independent on the initial conditions $\mathbf{w}_{0}$. $\mathbf{w}_{t}$ will reach $\mathbf{v}_1$, which is the Boltzmann probability distribution for the defined partition function $Z(\beta)$ \cite{newman1999monte}, a quantity depending on temperature and the lattice itself. This means that if we allow ourselves enough time, the initial configuration of $\mathcal{L}$ can be selected freely since its probability distribution is bound to reach its most likely state from any initial configuration.
 
 \vspace{5mm}
 
-From Equation (\ref{eq:metropolis}) we see that the Metropolis algorithm lets us simulate the spin distribution of the lattice without knowing the partition function $Z(\beta)$ in the state probability distribution $P_i$ in Equation (\ref{eq:pi}). This would require us to sum over all the $M = 2^{L^2}$ possible configurations $\mathcal{L}_i$ of the lattice, a factor which very quickly becomes unwieldy. However, to derive any useful quantities for the lattice at a given temperature, it would be necessary, unfortunately.
+From Equation (\ref{eq:metropolis}) we see that the Metropolis algorithm lets us simulate the spin distribution of the lattice without knowing the partition function $Z(\beta)$. Evaluating this is not complicated, but it would require us to sum over all the possible configurations $\mathcal{L}_i$ of the lattice. The number of configurations is given by $M = 2^{L^2}$; a factor which very quickly becomes unwieldy. However, to derive any useful quantities for the lattice at a given temperature, it would still be necessary do sum over all configurations, unfortunately.
 
 The expected magnetic energy and moment of the lattice are given by the equations
 \begin{equation}
@@ -189,26 +189,26 @@ which have the limits $\bar{\mu}_X \rightarrow \mathbb{E}(X)$ when $N \rightarro
 
 \vspace{5mm}
 
-We will now study how to best implement our Monte Carlo simulation of the Ising model in a computer program. To get good approximations for the expectation values, we will need to do hundreds of thousands or even millions of spin flip tests on our lattice. That we develop efficient code is therefore highly important.
+We will now study how to best implement our Monte Carlo simulation of the Ising model in a computer program. To get good approximations for the expectation values, we will need to do hundreds of thousands or even millions of spin flip tests on our lattice. That we develop efficient code is therefore a high priority.
 
-Our lattice $\mathcal{L}$ has limited extension with $L \times L$ spins, and the first thing we need do is to define the boundary conditions. Since we wish to simulate as large lattices as possible, we will use so-called \textit{periodic} boundary conditions, where the spins on the lattice edges are imagined to neighbor on each other. See \cite{fys-stk4155-notes}.
+Our lattice $\mathcal{L}$ has limited extension with $L \times L$ spins, and the first thing we need do is to define the boundary conditions. Since we wish to simulate as large lattices as possible, we will use so-called \textit{periodic} boundary conditions, where the spins on the lattice edges are imagined to neighbor on each other. See \cite{fys4150-notes}.
 
 Next we randomly pick a candidate to flip among the spins in the lattice, say $s_k$. We use the Metropolis algorithm in Equation (\ref{eq:metropolis}) to decide whether the flip is accepted or not, based on the change $\Delta E_{i \rightarrow j}$ in the lattice's energy from state $\mathcal{L}_i$ to $\mathcal{L}_j$. The change in the lattice's energy is given by
 \begin{equation} \label{eq:dE}
 	\Delta E_{i \rightarrow j} = E_j - E_i = 2J s_k^{(i)} \sum_{\langle l \rangle} s_l,
 \end{equation}
-where $\langle l \rangle$ denotes $s_k$'s four neighbors and $s_k^{(i)}$ denotes its state in $\mathcal{L}_i$. We observe that the sum over $s_l$ can have only five different values, such that
+where $\langle l \rangle$ denotes $s_k$'s four neighbors and $s_k^{(i)}$ denotes its state in $\mathcal{L}_i$. We observe that the sum over $s_l$ can take only five different values, such that
 \begin{equation}
-	\Delta E_{i \rightarrow j} = \{-8J, -4J, 0, 4J, 8J \},
+	\Delta E_{i \rightarrow j} = \{-8J, -4J, 0, 4J, 8J \}.
 \end{equation}
 
-Consequently, the Metropolis algorithm acceptance criteria $A_{i \rightarrow j}$ Equation (\ref{eq:metropolis}) can take only five corresponding values at a given temperature $T$;
+Consequently, the Metropolis algorithm acceptance criteria $A_{i \rightarrow j}$ in Equation (\ref{eq:metropolis}) can take only five corresponding values at a given temperature $T$;
 \begin{equation} \label{eq:metropolis-acceptance}
 	A_{i \rightarrow j} = \{ 1, 1, 1, e^{-4J \beta}, e^{-8J \beta} \}, \quad \text{where} \quad \beta = \frac{1}{k_BT}.
 \end{equation}
-Pre-calculating these values and keeping them in a lookup table before we start the Markov process thus saves the potentially expensive calculation of the exponential function.
+Pre-calculating these values and keeping them in a lookup table before we start the Markov process thus saves the potentially expensive calculation of the exponential function during the Monte Carlo simulation.
 
-Before we start the process we should also calculate the lattice's energy and magnetic moment in the initial condition, $E, \mathcal{M}$. Then, whenever a candidate is accepted, the change in energy and magnetic moment are accumulated. However, to avoid clogging the CPU pipeline with conditionals, we should use a facility in many programming languages which is that boolean expressions return an \lstinline|integer|; \lstinline|0| for a \lstinline|FALSE| expression and \lstinline|1| for a \lstinline|TRUE|. If we let $b$ denote the result of the Metropolis algorithm (accept/not accept), we get the update rules
+Before we start the process we should also calculate the lattice's energy and magnetic moment in the initial condition, $E, \mathcal{M}$. Then, whenever a candidate is accepted, the change in energy and magnetic moment are accumulated. However, to avoid clogging the CPU pipeline with conditionals when we implement the Metropolis algorithm, we should use a facility that is available in many programming languages which is that boolean expressions return \lstinline|integer|s when they are evaluated; \lstinline|0| for a \lstinline|FALSE| expression and \lstinline|1| for a \lstinline|TRUE|. If we let $b$ denote the result of the Metropolis algorithm (accept/not accept), we get the update rules
 \begin{equation}
 \begin{aligned}
 	s_k &\leftarrow s_k - 2bs_k \\
@@ -217,11 +217,18 @@ Before we start the process we should also calculate the lattice's energy and ma
 \end{aligned}.
 \end{equation}
 
-An outline of an algorithm for solving the Ising model in two dimensions as a Markov chain by Monte Carlo simulation and the Metropolis algorithms as acceptance criteria is given in Listing \ref{lst:ising}. Note that we accumulate the absolute value of the magnetic moment. The reason for this is that the model becomes unstable and may shift between positive and negative values close to the critical temperature. Note also that one Monte Carlo cycle is defined here as one sweep over the whole lattice, meaning that we do $L^2$ Metropolis spin flip tests per cycle.
+\vspace{5mm}
+
+Listing \ref{lst:ising} gives an outline of an algorithm for solving the Ising model in two dimensions. It is implemented as a Markov chain and runs a Monte Carlo simulation with the Metropolis algorithm as acceptance criteria. 
+
+Note that we accumulate the absolute value \lstinline|Mabs| of the magnetic moment. The reason for this is that the model becomes unstable and may shift between positive and negative values close to the critical temperature. Note also that one Monte Carlo cycle is defined here as one sweep over the whole lattice, meaning that we do $L^2$ Metropolis spin flip tests per cycle. 
+
+Before we start sampling magnetic energy and moment with \lstinline|Eacc|, \lstinline|E2acc|, \lstinline|Macc| and \lstinline|M2acc|, we must let the model reach its steady state (equilibration). This is handled by running a number of cycles defined by the \lstinline|equilibration_cycles| parameter. The number of cycles to run before equilibration depends on the size of the lattice, its initial and target temperatures, and also the sequence of numbers coming from the random number generator. It can only be determined by trial and error, but equilibration will generally be slower for a larger lattice, and for a larger difference in initial and target temperatures.
 
 \begin{lstlisting}[caption={Solving the Ising model in two dimensions with Monte Carlo simulation and the Metropolis algorithm to approximate the mean values and variances of the magnetic energy and moment. Note that we accumulate the absolute value of the magnetic moment.},label={lst:ising},escapeinside={@}{@}] [!h]
 	// Declarations
-	T : "lattice temperature"
+	Tinit : "initial temperature of the lattice"
+	T : "target temperature of the lattice"	
 	lattice : "LxL 2D array containing the spins"
 	wij : "pre-calculated lookup table with Metropolis acceptance limits"
 	equilibration_cycles : "non-sampled thermalizing cycles"
@@ -231,7 +238,7 @@ An outline of an algorithm for solving the Ising model in two dimensions as a Ma
 	E2acc, M2acc : "Acc. energy and magn. moment squared for variance calc."
 	
 	// Initializing
-	init_lattice(lattice)  // gives some initial state to spins
+	init_lattice(lattice, Tinit)  // gives some initial state to spins
 	init_metropolis(wij, T)  // @Equation (\ref{eq:metropolis-acceptance})@
 	
 	// Monte Carlo
@@ -304,5 +311,5 @@ An outline of an algorithm for solving the Ising model in two dimensions as a Ma
 
 %\clearpage
 \bibliographystyle{unsrt}
-\bibliography{project2.bib}
+\bibliography{project4.bib}
 \end{document}
