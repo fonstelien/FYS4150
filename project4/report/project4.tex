@@ -133,7 +133,7 @@ The decision whether to accept the flip on not is then made in another stochasti
 \vspace{5mm}
 
 The transition probability $\mathbf{W}$ is a stochastic matrix, which means that it has a single largest eigenvalue $\lambda_{max} = \lambda_1 = 1$, and $\lambda_i < 1$ for the remaining \cite{fys4150-notes}. If we let $\mathbf{v}_i$ denote the corresponding eigenvectors, we can write the initial probability distribution $\mathbf{w}_{0}$ as
-\begin{equation}
+\begin{equation} \label{eq:initial-state}
 	\mathbf{w}_{0} = \sum_{i} \alpha_i \mathbf{v}_i.
 \end{equation}
 After the first iteration we get
@@ -345,7 +345,15 @@ and likewise for the magnetic moment;
 \end{equation}
 Here, we state again that $\beta = \frac{1}{k_B T}$.
 
-In Tables \ref{tab:2x2-e-vals} and \ref{tab:2x2-m-vals} we see the results of the simulations for temperature $T=1.0$ $J/k_B$ over the range $10^1$ to $10^7$ Monte Carlo cycles. We see that the model produces the expected values, but that we need to run up to $10^5$ cycles to get good estimates of the expectation values. For the variances, the energy variance error is only $8.3 \cdot 10^{-3}$ for $10^7$ cycles, while the magnetic moment variance error never improves beyond about $10^{-2}$ -- it even starts to fluctuate when we reach $10^5$ cycles! 
+In Tables \ref{tab:2x2-e-vals} and \ref{tab:2x2-m-vals} we see the results of the simulations for temperature $T=1.0$ $J/k_B$ over the range $10^1$ to $10^7$ Monte Carlo cycles. We see that the model produces the expected values, but that we need to run up to $10^5$ cycles to get good estimates of the expectation values. For the variances, the energy variance error is only $8.3 \cdot 10^{-3}$ for $10^7$ cycles, while the magnetic moment variance error never improves beyond about $10^{-2}$ to $10^{-3}$, unless we run up to $10^5$ cycles! Figure \ref{fig:2x2} shows the evolution for the first $10^7$ cycles.
+
+
+\begin{figure}[!h]
+	\centering
+	\includegraphics[width=1\linewidth]{./figs/2x2.png}
+	\caption{Evolution of the mean values and variances for the first $10^7$ Monte Carlo cycles in a $2 \times 2$ lattice at $T = 1.0$ $J/k_B$. Note the differing scales. The dotted line indicates analytical values. Good agreement is reached after about $10^6$ cycles, but the relative error still remains in the $10^{-2}$ to $10^{-3}$ range for the variances. See Tables \ref{tab:2x2-e-vals} and \ref{tab:2x2-m-vals}.}
+	\label{fig:2x2}
+\end{figure}
 
 \begin{table}[!h]
 	\caption{Calculated energy for the $2 \times 2$ lattice at temperature $T=1.0$ $J/k_B$. We see that for the estimation of $\mathbb{E}(E)$, the error improves with a factor of about 10 up to $N = 10^5$, and a factor of 2 thereafter. For the estimation of $\sigma^2_E$, the error is about 100 times higher, and improvement is less for increasing $N$. True values are $\mathbb{E}(E) = -1.995982$ and $\sigma_E^2 = 3.208233 \cdot 10^{-2}$.}
@@ -355,13 +363,15 @@ In Tables \ref{tab:2x2-e-vals} and \ref{tab:2x2-m-vals} we see the results of th
 		\toprule
 		log$_{10}$ $N$ & $\bar{\mu}_E$ & $\varepsilon$ & $\bar{\sigma}^2_E$ & $\varepsilon$ \\
 		\midrule
-		1 & -1.81818e+00 & 8.90791e-02 & 1.32231e+00 & 4.02163e+01 \\
-		2 & -1.98020e+00 & 7.90792e-03 & 1.56847e-01 & 3.88890e+00 \\
-		3 & -1.99201e+00 & 1.99105e-03 & 6.36806e-02 & 9.84911e-01 \\
-		4 & -1.99700e+00 & 5.10132e-04 & 2.39616e-02 & 2.53121e-01 \\
-		5 & -1.99586e+00 & 6.11451e-05 & 3.30511e-02 & 3.01967e-02 \\
-		6 & -1.99592e+00 & 3.01014e-05 & 3.25574e-02 & 1.48093e-02 \\
-		7 & -1.99602e+00 & 1.67910e-05 & 3.18149e-02 & 8.33595e-03 \\
+			1 & -1.81818e+00 & 8.90791e-02 & 1.32231e+00 & 4.02163e+01 \\
+			2 & -1.98020e+00 & 7.90792e-03 & 1.56847e-01 & 3.88890e+00 \\
+			3 & -1.99201e+00 & 1.99105e-03 & 6.36806e-02 & 9.84911e-01 \\
+			4 & -1.99700e+00 & 5.10132e-04 & 2.39616e-02 & 2.53121e-01 \\
+			5 & -1.99586e+00 & 6.11451e-05 & 3.30511e-02 & 3.01967e-02 \\
+			6 & -1.99592e+00 & 3.01014e-05 & 3.25574e-02 & 1.48093e-02 \\
+			7 & -1.99602e+00 & 1.67910e-05 & 3.18149e-02 & 8.33595e-03 \\
+			8 & -1.99600e+00 & 7.17146e-06 & 3.19676e-02 & 3.57728e-03 \\
+			9 & -1.99598e+00 & 2.39515e-07 & 3.20777e-02 & 1.42978e-04 \\
 		\bottomrule
 	\end{tabular}
 	\end{center}
@@ -375,36 +385,72 @@ In Tables \ref{tab:2x2-e-vals} and \ref{tab:2x2-m-vals} we see the results of th
 			\toprule
 			log$_{10}$ $N$ & $\bar{\mu}_{|\mathcal{M}|}$ & $\varepsilon$ & $\bar{\sigma}^2_{|\mathcal{M}|}$ & $\varepsilon$ \\
 			\midrule
-			1 & 9.09091e-01 & 8.96899e-02 & 3.30579e-01 & 8.14233e+01 \\
-			2 & 9.90099e-01 & 8.57320e-03 & 3.92118e-02 & 8.77671e+00 \\
-			3 & 9.97003e-01 & 1.65996e-03 & 9.95408e-03 & 1.48186e+00 \\
-			4 & 9.98800e-01 & 1.39574e-04 & 4.19382e-03 & 4.56479e-02 \\
-			5 & 9.98560e-01 & 1.00853e-04 & 4.49166e-03 & 1.19908e-01 \\
-			6 & 9.98648e-01 & 1.27485e-05 & 4.02668e-03 & 3.97554e-03 \\
-			7 & 9.98673e-01 & 1.25342e-05 & 3.96926e-03 & 1.03425e-02 \\
+				1 & 9.09091e-01 & 8.96899e-02 & 3.30579e-01 & 8.14233e+01 \\
+				2 & 9.90099e-01 & 8.57320e-03 & 3.92118e-02 & 8.77671e+00 \\
+				3 & 9.97003e-01 & 1.65996e-03 & 9.95408e-03 & 1.48186e+00 \\
+				4 & 9.98800e-01 & 1.39574e-04 & 4.19382e-03 & 4.56479e-02 \\
+				5 & 9.98560e-01 & 1.00853e-04 & 4.49166e-03 & 1.19908e-01 \\
+				6 & 9.98648e-01 & 1.27485e-05 & 4.02668e-03 & 3.97554e-03 \\
+				7 & 9.98673e-01 & 1.25342e-05 & 3.96926e-03 & 1.03425e-02 \\
+				8 & 9.98666e-01 & 4.90383e-06 & 3.99568e-03 & 3.75535e-03 \\
+				9 & 9.98661e-01 & 8.18624e-08 & 4.01068e-03 & 1.50076e-05 \\
 			\bottomrule
 		\end{tabular}
 	\end{center}
 \end{table}
 
-\begin{figure}[!h]
-	\centering
-	\includegraphics[width=1\linewidth]{./figs/2x2.png}
-	\caption{.}
-	\label{fig:2x2}
-\end{figure}
 
 
 \subsection{Reaching Equilibration} \label{sec:equilibration}
 %  lattice with L=20 spins in the x and y directions
 
-With the $2 \times 2$ lattice in the previous section, equilibration \textit{to} any temperature \textit{from} any temperature is a few cycles at most since the lattice will always be in one of the six possible fundamental configurations. A larger lattice allows more states, and therefore needs to reach equilibration before we can start sampling the magnetic energy and moment.
+With the $2 \times 2$ lattice in the previous section, equilibration \textit{to} any temperature \textit{from} any temperature is a few cycles at most since the lattice will always be in one of the six possible fundamental configurations listed in Table \ref{tab:2x2-states}. A larger model, like the $20 \times 20$ that we will study here, allows for more configurations, and we therefore need to allow the model to reach equilibration before we can start sampling the magnetic energy and moment. Figure \ref{fig:20x20-wo-equilibration} clearly shows this. We see that starting at different configurations may bring some benefit -- especially for lower temperatures. At $T = 1.0$ $J/k_B$ all spins are usually up, corresponding well to the initial conditions. We also see that for this lattice, equilibration is reached at around 6000 cycles at the latest (lower right pane), but in reality sooner than that since the calculation of the average has a memory of the equilibration process.
 
+\begin{figure}[!h]
+	\centering
+	\includegraphics[width=1\linewidth]{./figs/20x20-wo-equilibration.png}
+	\caption{Evolution of the mean values for the first $10^4$ Monte Carlo cycles in a $20 \times 20$ lattice at $T = 1.0$ $J/k_B$ in the upper panes, and $T = 2.4$ $J/k_B$ in the lower panes. We clearly see that we must allow some cycles for the model to reach equilibration, especially for higher temperatures. Cold start: all spins up; hot start; random spins.}
+	\label{fig:20x20-wo-equilibration}
+\end{figure}
 
+Figure \ref{fig:20x20-config-energy} shows the evolution of the lattice energy $E_i$ in each configuration for the first 500 cycles. We see that the hot start energy confluences with the cold start energy as early as after 160-170 cycles for $T = 1.0$ $J/k_B$, and not very much later for $T = 2.4$ $J/k_B$. At this point the Markov process has converged. The probability distribution of the lattice has reached the Boltzmann distribution for the lattice at $T$, as shown in Equations (\ref{eq:initial-state}) to (\ref{eq:steady-state}). That is; $\mathbf{w}_t \rightarrow \mathbf{v}_1$. This becomes visible also when we look at the evolution of the number of accepted flips per Monte Carlo cycle in Figure \ref{fig:20x20-flips-per-cycle}; the hot start and cold start curves follow each other perfectly. Snapshots to confirm this are shown in Figure \ref{fig:20x20-config-spins}, where we see in the middle and right pane that the lattices match \textit{perfectly}. 
 
+We should note that this result depends on that each process draws the same sequence of semi-random numbers from our random number generator, and may also be subject to the numerical precision in a CPU.
+
+\begin{figure}[!h]
+	\centering
+	\includegraphics[width=1\linewidth]{./figs/20x20-config-energy.png}
+	\caption{Evolution of the lattice energy $E_i$ in each configuration during the first 500 Monte Carlo cycles for a $20 \times 20$ lattice. The hot and cold start confluence at around 160 cycles for $T = 1.0$ $J/k_B$, and 200 for $T = 2.4$ $J/k_B$.}
+	\label{fig:20x20-config-energy}
+\end{figure}
+
+\begin{figure}[!h]
+	\centering
+	\includegraphics[width=1\linewidth]{./figs/20x20-flips-per-cycle.png}
+	\caption{Accepted spin flips per Monte Carlo cycle during the first 500 Monte Carlo cycles for a $20 \times 20$ lattice. After confluence, the Markov process has converged and the evolution is independent of the lattice's initial configuration. Higher lattice temperature gives more accepted flips, as should be expected due to the higher kinetic energy of the spins.}
+	\label{fig:20x20-flips-per-cycle}
+\end{figure}
+
+\begin{figure}[!h]
+	\centering
+	\includegraphics[width=1\linewidth]{./figs/20x20-config-spins.png}
+	\caption{Configuration of spins in a $20 \times 20$ lattice at the start of the process to the left ($T=0$ in the upper and $T \rightarrow \infty$ in the lower). In the middle and to the right we see that after the confluence of the hot and cold trajectories in Figure \ref{fig:20x20-flips-per-cycle}, the evolution is independent of the starting conditions.}
+	\label{fig:20x20-config-spins}
+\end{figure}
 
 \subsection{Approximation of the Probability Distribution} \label{sec:equilibration}
+As we saw in Equation (\ref{eq:pi}) in Section \ref{sec:methods}, calculation of a lattice's probability distribution $P(\beta)$ involves evaluating the partition function $Z(\beta)$, which is prohibitively time consuming. Measuring it by simulation, on the other hand, involves only that we sample the configuration energies and sort them from lowest to highest.
 
+Figure \ref{fig:20x20-prob-dist} shows the probability distributions at temperatures $T = 1.0$ $J/k_B$ and $T = 2.4$ $J/k_B$ for our $20 \times 20$ lattice. We have sampled the energy after every Monte Carlo cycle for $10^4$, $10^5$ and $10^6$ cycles. Note the different scales on the $x$ axes. 
+
+As expected from the discussion in the previous section, the distribution is concentrated to the left at lower temperatures, with only about one in hundred cycles having a single down spin and one in thousand having three. Increasing the temperature shifts the distribution to higher energies and also makes it broader. This is reflected in the higher variance of approximately 8.2, which is around 0.025 for the low temperature in the best estimate, and corresponds well to our Figures \ref{fig:20x20-config-energy}, \ref{fig:20x20-flips-per-cycle} and \ref{fig:20x20-config-spins}.
+
+\begin{figure}[!h]
+	\centering
+	\includegraphics[width=1\linewidth]{./figs/20x20-prob-dist.png}
+	\caption{Probability densitiies for a $20 \times 20$ lattice at temperatures $T = 1.0$ $J/k_B$ and $T = 2.4$ $J/k_B$. Note the logarithmic scale. At low temperature, the distribution is heavily concentrated at the lower energies. For higher temperatures, the distribution is shifted to higher energies and is much broader. This corresponds well to the change in variance.}
+	\label{fig:20x20-prob-dist}
+\end{figure}
 
 \subsection{Finding the Phase Transition} \label{sec:equilibration}
 
