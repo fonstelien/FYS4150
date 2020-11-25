@@ -1,0 +1,9 @@
+../../source/project4 -L 2.4 -l 20 -c 0 -s 0 > init_cold_plot.csv
+../../source/project4 -L 2.4 -l 20 -c 0 -s 1 > init_hot_plot.csv
+
+../../source/project4 -L 1 -l 20 -c 195 -s 0 > 1cold_plot.csv
+../../source/project4 -L 1 -l 20 -c 195 -s 1 > 1hot_plot.csv
+
+../../source/project4 -L 2.4 -l 20 -c 300 -s 0 > 24cold_plot.csv
+../../source/project4 -L 2.4 -l 20 -c 300 -s 1 > 24hot_plot.csv
+
