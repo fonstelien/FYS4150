@@ -24,6 +24,7 @@ void print_usage() {
   cout << endl;
   cout << " All output in csv format." << endl;
   cout << " Example:" << endl;
+  cout << " $ project4 -R 2 .1 2.2 -l 20 -c 1e5" << endl;
   cout << " # $ ./project4 -R 2 .1 -l 20 -c 1e5 2.2" << endl; 
   cout << " T,E,CV,Mabs,Chi,M" << endl;
   cout << " 2.0000000000000000e+00,-1.7459954400455997e+00,7.3134602046044161e-01,9.1147373526264741e-01,3.8114415508978711e-01,9.1147373526264741e-01" << endl;
