@@ -71,12 +71,15 @@ class Sirs:
         self.N = N
         
     def constant_fractions(self):
-        '''Returns constant fractions in a zero deaths/zero births population.'''
+        '''Returns constant fractions in a zero deaths/zero births population with constant transmission rate fa(t)=a.'''
         a = self.fa(0)
-        if a == 0:
-            return (1,0,0)
+        f = self.ff(0)
+        if a == 0 or a <= self.b:
+            s = 1/(1 + f/self.c)
+            r = 1 - s
+            return (s,0,r)
         s = self.b/a
-        i = (1 - self.b/a)/(1 + self.b/self.c)
+        i = (1 - (1+f/self.c)*self.b/a)/(1 + self.b/self.c)
         r = 1 - s - i
         return (s, i, r)
 
