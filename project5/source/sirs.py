@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class Sirs:
     def __init__(self, N0, I0, A=0, a=4, b=2, c=.5, d=0, dI=0, e=0, F=0, f=0, fa=None, ff=None):
         '''Instantiate with initial pop. size and number of infected I0. A,a are the amplitude and average of the seasonal infection rate; b is the recovery rate; c is the immunity loss rate; d is the population death rate from other causes; dI is the insidence death rate; e is the population birth rate; F,f are the amplitude and average of the seasonal vaccination rate; fa,ff accept functions func(t) for infection and vaccination rates.'''
@@ -86,7 +87,7 @@ class Sirs:
 
 class SirsSolver:
     def __init__(self, sirs):
-        '''Instantiate with a Sirs instance.'''
+        '''Class for solving the SIRS model Instantiate with a Sirs instance.'''
         self.sirs = sirs
         self.fs = {'S':sirs.S_dot, 'I':sirs.I_dot, 'R':sirs.R_dot, 'N':sirs.N_dot}
         self.res = {'S':None, 'I':None, 'R':None, 'N':None}
@@ -137,7 +138,7 @@ class SirsSolver:
     
 
     def run_mc(self, t_max=20, seed=0):
-        '''Run Monte Carlo simulation until t_max. Step length is adaptive. Result is available in the SirsSolver.res data structure.'''
+        '''Run Monte Carlo simulation until t_max with seed forwarded to RNG. Step length is adaptive. Result is available in the SirsSolver.res data structure.'''
         n_iter = 10000
         self._init_run(n_iter)
         self.t = np.zeros(n_iter)
@@ -160,6 +161,7 @@ class SirsSolver:
             random_number = random_numbers[i%n_iter]
             si, ir, rs, sr = self.sirs.sir_transitions(random_number, dt, ti=ti)
             bs, sd, idI, idD, rd = self.sirs.vitality_transitions(random_number, dt)
+            
             self.t[i] = ti + dt
             self.res['S'][i] = self.res['S'][i-1] - si + rs + bs - sd - sr
             self.res['I'][i] = self.res['I'][i-1] + si - ir - idI - idD
@@ -172,10 +174,20 @@ class SirsSolver:
             dt = self.sirs.delta_t(ti)
             i += 1
             
-        ## trim trailing zeros
+        ## Trim trailing zeros
         self.t = np.trim_zeros(self.t, trim='b')
         new_length = len(self.t)
         self.res['S'] = self.res['S'][:new_length]
         self.res['I'] = self.res['I'][:new_length]
         self.res['R'] = self.res['R'][:new_length]
         self.res['N'] = self.res['N'][:new_length]
+
+
+    def get_stats(self, t_start):
+        '''Calculates the mean and standard deviations of each population S,I,R,N after time t_start and returns them in a dict() keyed on "S","I","R","N". To be used after run_mc().'''
+        idx = self.t[self.t < t_start].size
+        res = {'S':(self.res['S'][idx:].mean(), self.res['S'][idx:].std()),
+               'I':(self.res['I'][idx:].mean(), self.res['I'][idx:].std()),
+               'R':(self.res['R'][idx:].mean(), self.res['R'][idx:].std()),
+               'N':(self.res['N'][idx:].mean(), self.res['N'][idx:].std())}
+        return res, (self.res['S'][idx:], self.res['I'][idx:], self.res['R'][idx:], self.res['N'][idx:])
