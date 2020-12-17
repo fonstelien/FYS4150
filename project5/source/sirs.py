@@ -96,7 +96,7 @@ class SirsSolver:
     def get_fractions(self):
         '''Returns the simulation results SirsSolver.res as fractions of dynamical population.'''
         N = self.res['N']
-        return (self.res['S']/N, self.res['I']/N, self.res['R']/N)
+        return (self.res['S']/N, self.res['I']/N, self.res['R']/N, N)
         
     def _init_run(self, n_iter):
         '''Initializes the SirsSolver.res data structure. Do this before simulation.'''
