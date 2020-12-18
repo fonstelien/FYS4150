@@ -79,12 +79,12 @@ class Sirs:
         '''Returns constant fractions in a zero deaths/zero births population with constant transmission rate fa(t)=a.'''
         a = self.fa(0)
         f = self.ff(0)
-        if a == 0 or a <= self.b:
+        i = (1 - (1+f/self.c)*self.b/a)/(1 + self.b/self.c)
+        if a == 0 or a <= self.b or i <= 0:
             s = 1/(1 + f/self.c)
             r = 1 - s
             return (s,0,r)
         s = self.b/a
-        i = (1 - (1+f/self.c)*self.b/a)/(1 + self.b/self.c)
         r = 1 - s - i
         return (s, i, r)
 
