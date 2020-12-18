@@ -53,6 +53,7 @@
 % - What I have done
 % - The structure of the report, how it is organized etc
 
+RK4 optimal with regards to computations and error.
 
 %\clearpage
 \section{Background: The SIRS Model} \label{sec:background-sirs}
@@ -153,10 +154,12 @@ where we have assumed that newborns are initially susceptible. The steady-state 
 The differential equation for the SIRS model as stated in Equations (\ref{eq:sirs-classic}), (\ref{eq:sirs-vaccinated}), (\ref{eq:sirs-vitals}) does not have an analytical solution. In this chapter we will develop two algorithms for solving them; one based on the Fourth order Runge-Kutta numerical method; and one based on Monte Carlo simulation.
 
 \subsection{Fourth Order Runge-Kutta Algorithm for the SIRS Model} \label{sec:runge-kutta}
-The Fourth Order Runge-Kutta method, or simply RK4, is based on \textit{Simpson's rule} for numerical integration, by which
-\begin{equation}
-	\int_{a}^{b} f(x) dx = \frac{1}{6} \big( f(a) + 4f((b+a)/2) + f(b) \big) + O(h^5).
+The Fourth Order Runge-Kutta method, or simply RK4, is based on \textit{Simpson's Rule} for numerical integration, by which
+\begin{equation} \label{eq:simpsons-rule}
+	\int_{a}^{b} f(x) dx = \frac{1}{6} \big( f(a) + 4f((b+a)/2) + f(b) \big) + O(h^5),
 \end{equation}
+-- that is; an approximation of $f$'s slope over $[a,b]$ by the weighted function values at the end points $a,b$ and the midpoint $(a+b)/2$.
+
 Given a first-order differential equation on the form
 \begin{equation}
 	\frac{dy}{dt} = f(t, y),
@@ -165,10 +168,10 @@ we can approximate $y(t)$ numerically by $y_t$ as
 \begin{equation}
 \begin{aligned} \label{eq:re4-1st-step}
 		y_{i+1} &= y_i + \int_{t_i}^{t_{i+1}} f(t,y) dt \\
-		&= \frac{1}{6} \big( f(t_i, y_i) + 4f(t_{i+1/2}, y_{i+1/2}) + f(t_{i+1}, y_{i+1}) \big) + O(h^5)
-\end{aligned} \quad .
+		&= \frac{h}{6} \big( f(t_i, y_i) + 4f(t_{i+1/2}, y_{i+1/2}) + f(t_{i+1}, y_{i+1}) \big) + O(h^5)
+\end{aligned} \quad ,
 \end{equation}
-The midpoint value $y_{i+1/2}$ and $y_{i+1}$ are unknown to us. We may approximate $y_{i+1/2}$ as $y^*_{i+1/2}$ by \textit{Euler's Forward Method} with step size $h/2$ such that
+where $h=t_{i+1} - t_i$ is the step size. The midpoint and endpoint values $y_{i+1/2}$ and $y_{i+1}$ are unknown to us. We may approximate $y_{i+1/2}$ as $y^*_{i+1/2}$ by \textit{Euler's Forward Method} with step size $h/2$ such that
 \begin{equation}
 	y_{i+1/2} = y_i + \frac{h}{2} f(t_i, y_i) + O(h^2) \Rightarrow y^*_{i+1/2} = y_i + \frac{h}{2} f(t_i, y_i),
 \end{equation}
@@ -178,17 +181,152 @@ but instead of applying this directly into Equation (\ref{eq:re4-1st-step}), RK4
 \end{equation}
 where $y^{**}_{i+1/2}$ in the second term is an improved approximation of $y_{i+1/2}$ using
 \begin{equation}
-	y^{**}_{i+1/2} = y_i + \frac{h}{2} f(t_i, y^*_i).
+	y^{**}_{i+1/2} = y_i + \frac{h}{2} f(t_{i+1/2}, y^{*}_{i+1/2}).
 \end{equation}
 Following the same pattern, $y_{i+1}$ in the last term is approximated by $y^*_{i+1}$ using $y^{**}_{i+1/2}$ such that
 \begin{equation}
-	y^{*}_{i+1} = y_i + \frac{h}{2} f(t_{i+1/2}, y^{**}_{i+1/2}).
+	y^{*}_{i+1} = y_i + h f(t_{i+1/2}, y^{**}_{i+1/2}).
+\end{equation}
+We end up with an approximation $y^{**}_{i+1}$ which is given by
+\begin{equation}
+	y^{**}_{i+1} = y_i + \frac{h}{6} \big( f(t_i, y_i) + 2f(t_i + \frac{h}{2}, y^*_{i+1/2}) + 2f(t_i + \frac{h}{2}, y^{**}_{i+1/2}) + f(t_i+h, y^*_{i+1}) \big).
+\end{equation}
+The error is similar to that of Simpson's Rule, $O(h^5)$, which adds up to $O(h^4)$ over the whole run from $t_1=t_0+h$ to $t_n=t_0+nh$. This comes however at the cost of seven evaluations of $f(t,y)$ at each time step, compared with only one for Euler's method, which again has an overall error $O(h)$.
+
+Algorithmically, the steps are given in Listing \ref{lst:rk4-steps} and is very simple to implement. It runs in $\mathcal{O}(n)$ time and requires no memory of the earlier calculation steps. It is CPU-bound.
+
+\begin{lstlisting}[caption={Fourth order Runge-Kutta algorithm.},label={lst:rk4-steps},escapeinside={@}{@}] [!h]
+ALGORITHM RUNGE-KUTTA(f, ti, yi, h)
+	Inputs: function f, time ti, value yi at time ti, step size h.
+	Outputs: approximation of y at time ti+h.
+	
+	k1 = h*f(ti, yi)
+	k2 = h*f(ti+h/2, yi+k1/2)
+	k3 = h*f(ti+h/2, yi+k2/2)
+	k4 = h*f(ti+h, yi+k3)
+	output yi + (k1 + 2*k2 + 2*k3 + k4)/6
+
+END ALGORITHM
+\end{lstlisting}
+
+The SIRS model as described in Equation (\ref{eq:sirs-vitals}) can be implemented directly as it stands using the Runge-Kutta algorithm in Listing \ref{lst:rk4-steps}. We will however add an equation for the population growth rate $n'$, giving the following set of equations;
+
+\begin{equation} \label{eq:sirs-rk4}
+\begin{aligned}
+	s' &= cr - asi - fs - ds + e \\
+	i' &= asi - bi - di -d_Ii \\
+	r' &= bi - cr + fs - dr \\
+	n' &= e - d - id_I
+\end{aligned} \quad .
 \end{equation}
 
+We must select a suitable time step $h$, and update all approximations for each iterations, using only the values from the earlier iteration. However, we might update the last equation, say that for $r_i$ based on the results of the others, since $r_i = n_i - s_i - i_i$ at all times. This improves numerical stability. A possible implementation is outlined in Listing \ref{lst:rk4-sirs}.
 
+\begin{lstlisting}[caption={SIRS model Runge-Kutta algorithm.},label={lst:rk4-sirs},escapeinside={@}{@}] [!h]
+ALGORITHM SIRS-RUNGE-KUTTA(fs, fi, fn, t0, s0, i0, n0, n, h)
+	Inputs: functions fi, fi, fn, initial time t0, 
+			initial values s0, i0, n0, time steps n, step size h.
+	Outputs: approximation of s, i, r, n at time
+			 t=t0+h, t0+2*h, ..., t0+n*h
+	
+	s = s0
+	i = i0
+	n = n0
+	t = t0
+	FOR k IN 1...n DO
+		s = RUNGE-KUTTA(fs, t, s, h)
+		i = RUNGE-KUTTA(fi, t, i, h)
+		n = RUNGE-KUTTA(fn, t, n, h)
+		r = n - s - i
+		t = t + h
+		output s, i, r, n
+	END FOR
+
+END ALGORITHM
+\end{lstlisting}
+
+Possible extensions to the Fourth Order Runge-Kutta algorithm include the \textit{Runge-Kutta-Fehlberg} algorithm, which applies adaptive time step for error control and optimalization. See \cite{fys4150-notes} for more on this issue as well as numerical methods for solving differential equations in general.
 
 \subsection{Monte Carlo Algorithm for the SIRS Model} \label{sec:monte-carlo}
 %lets us calculate discrete values
+The Runge-Kutta method inherently implicates continuous values for the ratios of susceptibles $s$, infectious $i$, and recovering $r$ in the population. The Monte Carlo method, on the other hand, lets us calculate the discrete changes in each class, and thereby simulate a possible trajectory for the spread of the disease and the effect it has on the population. 
+
+Before we run the simulation, however, the expectation value at each step in the trajectory is exactly the solution to the differential equation describing the SIRS model;
+\begin{equation}
+	\mathbb{E}(y_i) = y(t_i)
+\end{equation}
+The Monte Carlo method will therefore give us an estimate $\bar{\mu}_i$ of the solution if we calculate its mean value. The estimate follows the $t$-distribution and if we run $n$ simulations it has standard deviation $\bar{\sigma}_i$ given by
+\begin{equation}
+	\bar{\sigma}_i^2 = \frac{1}{n-1} \sum_{j=1}^{n} (y_j - \bar{\mu}_i)^2.
+\end{equation}
+From this we can calculate a confidence interval for the \textit{true} $\mu_i = y(t_i)$, i.e. the solution to the equations. A $100 \cdot (1-\alpha)$ \% confidence interval is given by
+\begin{equation}
+	\bar{\mu}_i - t_{\alpha/2, \nu} \frac{\sigma}{\sqrt{n}} < y(t_i) < \bar{\mu}_i + t_{\alpha/2, \nu} \frac{\sigma}{\sqrt{n}},
+\end{equation}
+where $\nu = n-1$ denotes the $t$-distribution's degrees of freedom. See \cite{devore2012}. As $\nu \rightarrow \infty$, the $t$-distribution converges towards the normal distribution, but for small $n$, i.e in the 10's or 20's, it does matter. A CI$_{90}$ has a multiplier of 1.64 for the normal distribution, while it is 1.83 for the $t$-distribution with $\nu=9$. Corresponding values for CI$_{99}$ are 2.58 and 3.25.
+
+We implement the Monte Carlo method by first discretizing the SIRS model in Equation (\ref{eq:sirs-vitals});
+\begin{equation} \label{eq:sirs-vitals-discrete}
+\begin{aligned}
+	S' &= cR - \frac{aSI}{N} - fS - dS + eN \\
+	I' &= \frac{aSI}{N} - bI - dI -d_II\\
+	R' &= bI - cR + fS - dR
+\end{aligned} \quad ,
+\end{equation}
+where we have let the upper-case letters $S,I,R,N$ denote discrete variables and their derivatives. Next, we translate the transition rates $\mathrm{rate}(X \rightarrow Y)$ into probabilities that a transition will happen within a time step $\Delta t$ of our simulation;
+\begin{equation} \label{eq:transition-probabilities}
+\begin{aligned}
+	P(S \rightarrow I) &= \frac{aSI}{N} \Delta t \\
+	P(S \rightarrow R) &= fS \Delta t \\
+	P(S \rightarrow D) &= dS \Delta t \\	
+	P(B \rightarrow S) &= eN \Delta t \\	
+	P(I \rightarrow R) &= bI \Delta t \\	
+	P(I \rightarrow D) &= dI \Delta t \\	
+	P(I \rightarrow D_I) &= d_II \Delta t \\	
+	P(R \rightarrow S) &= cR \Delta t \\	
+	P(R \rightarrow D) &= dR \Delta t \\		
+\end{aligned} \quad .
+\end{equation}
+Here, we have let $D$ denote deaths from other causes than the disease; $D_I$ deaths from the disease; and $B$ denote births, which again are all assumed into class $S$, i.e. susceptible. Since we cannot have any half deaths or half births, and since at any point in the simulation do not know the development in the next steps, we must adapt $\Delta t$ such that at any time at most one individual is likely to transition from one class to another. To find $\Delta t$, observe that for all but the new infections, the highest probability for the transition out of one class $X$ into another class $Y$ occurs when all $N$ individuals are in $X$. For new infections we have the highest rate when exactly half of the population are in each class $S,I$. Consequently, the time step $\Delta t$ must satisfy
+\begin{equation}
+\begin{aligned}
+	\mathrm{argmax}_X  P(X \rightarrow Y) &= qN \Delta t \le 1 \\
+	\mathrm{argmax}_{S,I} P(S \rightarrow I) &= \frac{aN}{4} \Delta t \le 1
+\end{aligned} \quad .
+\end{equation}
+For remembering that we may also have time-varying transition rates, such as seasonal vaccination or policy-suppressed transmission rates, we must adapt the time step at each iteration in the simulation such that
+\begin{equation} \label{eq:dt-min}
+	\Delta t = \frac{1}{N} \cdot \mathrm{min} \bigg( \frac{4}{a}, \frac{1}{b}, \frac{1}{c}, \frac{1}{d}, \frac{1}{d_I}, \frac{1}{e}, \frac{1}{f} \bigg).
+\end{equation}
+
+Now, having decided on the time step for iteration $i$, say, we draw a random number $\varepsilon_i \sim \mathcal{U}(0,1)$, and transition one individual from class $X$ to $Y$ if $\varepsilon_i < P_i(X \rightarrow Y)$. Since all transitions \textit{within one iteration} of the simulation are independent, we may reuse $\varepsilon_i$ when we do all the transition tests in that iteration. An outline of the resulting SIRS model Monte Carlo algorithm if given in Listing \ref{lst:mc-sirs}. 
+
+\begin{lstlisting}[caption={SIRS model Monte Carlo algorithm.},label={lst:mc-sirs},escapeinside={@}{@}] [!h]
+ALGORITHM SIRS-MONTE-CARLO()
+	Inputs: initial population distribution S0, I0, R0, N0,
+	time-varying transition rates a, b, c, d, dI, e, f,
+	initial time t0, end time tn.
+	Outputs: approximation of S, I, R, N at time
+	t1=t0+dt1, t2=t0+dt2, ..., tn.
+	
+	S = S0
+	I = I0
+	R = R0
+	N = N0
+	t = t0
+	WHILE t <= tn DO
+		dt = get_time_step(N, t)  // (@Equation (\ref{eq:dt-min})@)
+		epsilon = draw_random_number()
+		{collect incremental transitions from 
+		 all combinations in @Equation (\ref{eq:transition-probabilities})@.
+		 Make all transitions where probability < epsilon}
+		
+	
+		t = t + dt
+	END WHILE
+
+END ALGORITHM
+\end{lstlisting}
 
 
 %\clearpage
