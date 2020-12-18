@@ -70,6 +70,10 @@ class Sirs:
         self.I = I
         self.R = R
         self.N = N
+
+    def get_fractions(self):
+        N = self.N
+        return (self.S/N, self.I/N, self.R/N)
         
     def constant_fractions(self):
         '''Returns constant fractions in a zero deaths/zero births population with constant transmission rate fa(t)=a.'''
