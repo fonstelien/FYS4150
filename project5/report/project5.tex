@@ -45,6 +45,13 @@
 % - Main Results 
 % - The implications
 
+The report suggests two numerical algorithms for solving the SIRS model for the spread of disease in a population. The first model is deterministic and continuous and is based on the Fourth Order Runge-Kutta method; the second model is stochastic and discrete and is based on the Monte Carlo method. The report shows an example where the algorithms find diverging solution to a problem, but explains how both solutions are correct when interpreted into the proper context -- the Runge-Kutta algorithm is most suitable for problems on the macro scale; while the Monte Carlo algorithm is most suitable for problems on the micro scale. The computational efficiency of both algorithms also suggests this division between their best applications. The report also gives a review of the mathematical basis for each of the algorithms and an outline for their implementation.
+
+The report presents results from solutions to the SIRS models, including vaccination; dynamic populations; and a case study of the 2020 COVID-19 pandemic. The effects of government-imposed \textit{lockdowns} are explored in the context of seasonal variations in transmission rates. The report concludes that strict lockdowns must be implemented at the right time in order to have effect reduce the reproduction number $R_t < 1$ -- that is; when the transmission rate increases due to seasonal variations, and not when the infection rate rises. If implemented too late, seasonal variations are the main driver in infection rate drops.
+
+Please visit my GitHub repository \url{https://github.com/fonstelien/FYS4150/tree/master/project5} for the source code developed for this report.
+
+
 \end{abstract}
 
 \section{Introduction} \label{sec:intro}
@@ -53,7 +60,11 @@
 % - What I have done
 % - The structure of the report, how it is organized etc
 
-RK4 optimal with regards to computations and error.
+The spread of disease in a population depends on a large number of social and environmental factors spanning from government policies, culture, national economy and health services, to geography, climate and seasonal variations. In addtion certain factors about the pathogen itself, the SIRS model lets us model all of these factors by weighing their effect on a disease's transmission rate to the susceptible part of the population; the recovery rate among the infectious part; and the immunity loss rate among the recovering part of the population.
+
+Mathematically, the SIRS model is described by a set of three coupled differential equations for the rate of change in each part of the population. It does not have an analytical solution, and hence the need for numerical methods. Numerical methods also lets us introduce complex time-dependent transition rates, to predict in detail the outcome of the implementation of for instance a government policy, which further expands the SIRS model's potential. 
+
+In this report we will develop two algorithms for solving the SIRS model, one deterministic and continuous algorithm based on the Fourth Order Runge-Kutta method; and one stochastic and discrete algorithm based on the Monte Carlo method. We will begin in Section \ref{sec:background-sirs} by properly introducing the SIRS model, and see how we can expand it to explicitly include factors like vaccinations, seasonal variations, and dynamic populations. Then, in Section \ref{sec:methods} we will review the mathematical basis for each of the methods; first Runge-Kutta in Section \ref{sec:runge-kutta}; then Monte Carlo in Section \ref{sec:monte-carlo}. We then move on to presenting the simulation results -- in all cases presented side-by-side for both algorithms. Firstly, in Section \ref{sec:recovery-rates} we present first the distribution of the Monte Carlo solution to the SIRS model before we investigate the importance of the basic reproduction number $R_0$ in the spread of a disease. We expand on these results by introducing vaccines in Section \ref{sec:vaccines}, and see how a given vaccination rate correspond to the distribution of the population as susceptible, infectious or recovering. Then we move on to Section \ref{sec:vital-dynamics} where we model vital dynamics and see where the continuous Runge-Kutta and discrete Monte Carlo model may arrive at diverging solutions for the SIRS model -- which may both be correct when interpreted into the proper context. In Section \ref{sec:case-study} we model the 2020 COVID-19 pandemic by tweaking the main parameters by introducing government-imposed \textit{lockdowns} and the slow arrival of vaccines. We conclude the report in Section \ref{sec:conclusion} by summing up our findings and giving some advice for further work.
 
 %\clearpage
 \section{Background: The SIRS Model} \label{sec:background-sirs}
