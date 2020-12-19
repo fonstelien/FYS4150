@@ -1,0 +1,5 @@
+# FYS4150 H20 Project 5 - Disease Modeling - SIRS Model
+
+For this project, I have chosen to use Python for code development. The choice is based on the assessment that the tasks are not very computational demanding, and Python is therefore suitable, even if native Python running on a single thread is not ideal for scientific computing. However, running the complete notebook that I have made for the project takes about 10 minutes, so I have gotten by fine. Efficiency in code development also matters -- Horses for courses!
+
+You will find the report and supporting files in the `report` folder and source code in the `source` folder. The source code consists of two files -- `sirs.py`, which contains two classes `Sirs`, which implements the SIRS model, and the `SirsSolver.py` class, which solves the SIRS model. I have been written extensive docstrings which I hope will make them easy to use. I recommend testing the code by running the `project5.ipynb`, which you will also find in the `source` folder. 
