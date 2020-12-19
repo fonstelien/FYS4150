@@ -442,6 +442,8 @@ Let us now study the effect of a disease on the long-term development of the pop
 
 
 
+
+
 \begin{figure}[!h]
 	\centering
 	\includegraphics[width=1\linewidth]{./figs/dynamic-pop-infected-ratio.png}
@@ -470,21 +472,31 @@ Another interesting case is the $d_I=5.00$, which represents a disease so deadly
 %vaccine availability as exponential curve
 %effect of early introduction of lockdown vs strictness
 
-We will now combine what we have learned from looking at the seasonality of vaccines and transmission rates in the above results with government policies and non-availability of vaccines, using COVID-19 as a case study \cite{who-url}. The science on this disease is still uncertain, but we will assume a strong seasonal factor in its transmission rate which peaks at new year; $a(t) = 3 + 2.25 \cos (5\pi t) $. Further, we will assume an influenza-like vaccination seasonality once that gets going, with a peak during the autumn months, such that $f(t) = 1 + 0.5 \cos (5\pi (t+2.5))$. Further, and critically, we will assume government imposed \textit{lockdowns} 
+We will now combine what we have learned from looking at the seasonality of vaccines and transmission rates in the above results with government policies and non-availability of vaccines, using the COVID-19 pandemic as a case study \cite{who-url}. The science on this disease is still uncertain, but we will assume a strong seasonal factor in its transmission rate which peaks at new year; $a(t) = 3 + 2.25 \cos (5\pi t) $, where one year is 10 time units. We will also assume an influenza-like vaccination seasonality once that gets going, with a peak during the autumn months, such that $f(t) = 1 + 0.5 \cos (5\pi (t+2.5))$. Further, and critically, we will assume government-imposed \textit{social lockdowns} put into force at different times during the onset of the pandemic and see how that affects the outcome, along with the effect of the \textit{strictness} of those lockdowns. Other parameters are keps as before; $b=1, c=0.5, N=400$, but we assume $I=20$ or 5 \% at the onset.
 
+Even if COVID-19 is a deadly disease, potentially, the incident death rate is still low enough for that we can ignore it and set all vitality rates to zero.
+
+In Figure \ref{fig:covid-policy} we see in the upper pane the first COVID-19 lockdown as a bathtub shaped gray-dotted line, and the resulting transmission rate $a(t)$ for the cases of 'immediate' lockdown ($t=0$); 'early' lockdown ($t=0.5$); 'late' lockdown ($t=1$); and 'none'. Each lockdown has the same length $\Delta t = 5$ as well as the same strictness, meaning that they reduce the seasonal infection rate by 90 \%, but as explained were implemented at different times. 
+
+In the middle pane, the first lockdown is 'immediate' in all cases ($t=0$), and with a new lockdown implemented in late autumn at $t=7.5$ with duration $\Delta t = 7$. This time the lockdowns have different strictness ranging from 'strict' (-90 \%); 'medium' (-70 \%); 'loose' (-20 \%); and 'none'.
+
+Finally, in the lower pane we see the vaccination rate. The assumption here is that once this becomes widely available at $t=15$, it follows a seasonal pattern.
 
 \begin{figure}[!h]
 	\centering
 	\includegraphics[width=1\linewidth]{./figs/covid-policy.png}
-	\caption{}
+	\caption{COVID-19 policies and vaccines. The upper two panes show the effect of government-imposed lockdowns (gray-dotted) on the seasonal transmission rate $a(t)$. We see the effect of lockdown timing (middle) and lockdown strictness (middle). In the lower pane, the assumed seasonality of the vaccination is shown, but with a delayed onset.}
 	\label{fig:covid-policy}
 \end{figure}
 
+Figure \ref{fig:covid-infection-sim} shows the result of each of the lockdown policies in Figure \ref{fig:covid-policy}, simulated with Runge-Kutta and Monte Carlo. We see in the upper panes that the only policy which has a considerable effect is an 'immediate' implementation. This limits the peak to about 20 \%, from an initial infection ratio of 5 \%. Later implementation has little to no effect, since the transmission rate -- which is the main driver -- is already coming down fast. All cases reach 40-50 \%. We see, however, that the later lockdowns have the same effect as the immediate towards the summer, when the infection has all but vanished and restrictions are relaxed.
+
+In the lower pane the course of the pandemic over the next few of years is simulated. First, we see that if only 'loose' lockdown policies are implemented, they almost no effect at all. However, 'strict' policies still can not reduce the infections to less than some 20 \% in the first wave, and 10 \% in the second. Measured towards this, the 'medium' policy performs relatively well at 30 and 20 \%. The later trajectories are less dependent on the policy decisions of the first year of the pandemic. As soon as the vaccines are introduced, which happens slowly during the first half of the second year, the disease is predicted to gradually vanish, luckily.
 
 \begin{figure}[!h]
 	\centering
 	\includegraphics[width=1\linewidth]{./figs/covid-infection-sim.png}
-	\caption{}
+	\caption{The effects of the timing and strictness of government-imposed lockdowns, and the advent of vaccines at around $t=15$. The upper pane shows the effect of timing of a 'strict' lockdown the on the infection ratio. The lower pane shows the effect of the strictness of 'immediate' lockdown at onset, and in the autumn of the first year. Finally, vaccines are introduced gradually with full effect around $t=15$. This causes the disease to vanish in the following years.}
 	\label{fig:covid-infection-sim}
 \end{figure}
 
