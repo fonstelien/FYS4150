@@ -31,7 +31,7 @@
 }
 
 
-\title{FYS4150 H20 - Project 5:\\Disease Modelling with Runge-Kutta and\\Monte Carlo Simulations}
+\title{FYS4150 H20 - Project 5:\\Solutions to the SIRS Disease Model with\\Runge-Kutta and Monte Carlo Methods}
 \author{Olav Fønstelien}
 
 \begin{document}
@@ -45,9 +45,9 @@
 % - Main Results 
 % - The implications
 
-The report suggests two numerical algorithms for solving the SIRS model for the spread of disease in a population. The first model is deterministic and continuous and is based on the Fourth Order Runge-Kutta method; the second model is stochastic and discrete and is based on the Monte Carlo method. The report shows an example where the algorithms find diverging solution to a problem, but explains how both solutions are correct when interpreted into the proper context -- the Runge-Kutta algorithm is most suitable for problems on the macro scale; while the Monte Carlo algorithm is most suitable for problems on the micro scale. The computational efficiency of both algorithms also suggests this division between their best applications. The report also gives a review of the mathematical basis for each of the algorithms and an outline for their implementation.
+The report suggests two numerical algorithms for solving the SIRS model for the spread of disease in a population. The first model is deterministic and continuous and is based on the Fourth Order Runge-Kutta method; the second model is stochastic and discrete and is based on the Monte Carlo method. The report shows an example where the algorithms find diverging solution to a problem, but explains how both solutions are correct when interpreted into the proper context -- the Runge-Kutta algorithm is most suitable for problems on the macro scale; while the Monte Carlo algorithm is most suitable for problems on the micro scale, dealing with small populations. The computational efficiency of both algorithms also suggests this division between their best applications. The report also gives a review of the mathematical basis for each of the algorithms and an outline for their implementation.
 
-The report presents results from solutions to the SIRS models, including vaccination; dynamic populations; and a case study of the 2020 COVID-19 pandemic. The effects of government-imposed \textit{lockdowns} are explored in the context of seasonal variations in transmission rates. The report concludes that strict lockdowns must be implemented at the right time in order to have effect reduce the reproduction number $R_t < 1$ -- that is; when the transmission rate increases due to seasonal variations, and not when the infection rate rises. If implemented too late, seasonal variations are the main driver in infection rate drops.
+The report presents results from solutions to the SIRS model, including vaccination; dynamic populations; and a case study of the 2020 COVID-19 pandemic. The effects of government-imposed \textit{lockdowns} are explored in the context of seasonal variations in transmission rates. The report concludes that strict lockdowns must be implemented at the right time in order to have effect and reduce the reproduction number $R_t < 1$ -- that is; they should be implemented when the \textit{transmission} rate increases due to seasonal variations, and not necessarily when the \textit{infection} rate rises. If implemented too late, seasonal variations are the main driver in later infection rate drops.
 
 Please visit my GitHub repository \url{https://github.com/fonstelien/FYS4150/tree/master/project5} for the source code developed for this report.
 
@@ -60,11 +60,11 @@ Please visit my GitHub repository \url{https://github.com/fonstelien/FYS4150/tre
 % - What I have done
 % - The structure of the report, how it is organized etc
 
-The spread of disease in a population depends on a large number of social and environmental factors spanning from government policies, culture, national economy and health services, to geography, climate and seasonal variations. In addtion certain factors about the pathogen itself, the SIRS model lets us model all of these factors by weighing their effect on a disease's transmission rate to the susceptible part of the population; the recovery rate among the infectious part; and the immunity loss rate among the recovering part of the population.
+The spread of disease in a population depends on a large number of social and environmental factors spanning from government policies, culture, national economy and health services, to geography, climate and seasonal variations -- in addition to the nature of the pathogen itself. The SIRS model lets us model all of these factors by weighing their effect on a disease's \textit{transmission rate} to the susceptible part of the population; the \textit{recovery rate} among the infectious part; and the \textit{immunity loss rate} among the recovering part of the population.
 
-Mathematically, the SIRS model is described by a set of three coupled differential equations for the rate of change in each part of the population. It does not have an analytical solution, and hence the need for numerical methods. Numerical methods also lets us introduce complex time-dependent transition rates, to predict in detail the outcome of the implementation of for instance a government policy, which further expands the SIRS model's potential. 
+Mathematically, we describe the SIRS model by a set of three coupled differential equations for the rate of change in each part of the population. It does not have an analytical solution, and hence the need for numerical methods. Numerical methods also let us introduce complex time-dependent transition rates, to predict in detail the outcome of the implementation of for instance a government policy, which further expands the SIRS model's potential. 
 
-In this report we will develop two algorithms for solving the SIRS model, one deterministic and continuous algorithm based on the Fourth Order Runge-Kutta method; and one stochastic and discrete algorithm based on the Monte Carlo method. We will begin in Section \ref{sec:background-sirs} by properly introducing the SIRS model, and see how we can expand it to explicitly include factors like vaccinations, seasonal variations, and dynamic populations. Then, in Section \ref{sec:methods} we will review the mathematical basis for each of the methods; first Runge-Kutta in Section \ref{sec:runge-kutta}; then Monte Carlo in Section \ref{sec:monte-carlo}. We then move on to presenting the simulation results -- in all cases presented side-by-side for both algorithms. Firstly, in Section \ref{sec:recovery-rates} we present first the distribution of the Monte Carlo solution to the SIRS model before we investigate the importance of the basic reproduction number $R_0$ in the spread of a disease. We expand on these results by introducing vaccines in Section \ref{sec:vaccines}, and see how a given vaccination rate correspond to the distribution of the population as susceptible, infectious or recovering. Then we move on to Section \ref{sec:vital-dynamics} where we model vital dynamics and see where the continuous Runge-Kutta and discrete Monte Carlo model may arrive at diverging solutions for the SIRS model -- which may both be correct when interpreted into the proper context. In Section \ref{sec:case-study} we model the 2020 COVID-19 pandemic by tweaking the main parameters by introducing government-imposed \textit{lockdowns} and the slow arrival of vaccines. We conclude the report in Section \ref{sec:conclusion} by summing up our findings and giving some advice for further work.
+In this report we will develop two algorithms for solving the SIRS model, one deterministic and continuous algorithm based on the Fourth Order Runge-Kutta method; and one stochastic and discrete algorithm based on the Monte Carlo method. We will begin in Section \ref{sec:background-sirs} by properly introducing the SIRS model, and see how we can expand it to explicitly include factors like vaccinations, seasonal variations, and dynamic populations. Then, in Section \ref{sec:methods} we will review the mathematical basis for each of the methods; first Runge-Kutta in Section \ref{sec:runge-kutta}; then Monte Carlo in Section \ref{sec:monte-carlo}. We then move on to presenting the simulation results -- in all cases presented side-by-side for both algorithms. Firstly, in Section \ref{sec:recovery-rates} we present first the distribution of the Monte Carlo solution to the SIRS model before we investigate the importance of the basic reproduction number $R_0$ in the spread of a disease. We expand on these results by introducing vaccines in Section \ref{sec:vaccines}, and see how a given vaccination rate correspond to the distribution of the population as susceptible, infectious or recovering. Then we move on to Section \ref{sec:vital-dynamics} where we model vital dynamics and see where the continuous Runge-Kutta and discrete Monte Carlo model may arrive at diverging solutions for the SIRS model -- which may both be correct when interpreted into the proper context. In Section \ref{sec:case-study} we model the 2020 COVID-19 pandemic by tweaking the main parameters in the model by introducing government-imposed \textit{lockdowns} and the slow arrival of vaccines. We conclude the report in Section \ref{sec:conclusion} by summing up our findings and giving some advice for further work.
 
 %\clearpage
 \section{Background: The SIRS Model} \label{sec:background-sirs}
@@ -81,16 +81,14 @@ and hence the name. The rates of the transition $S \rightarrow I$ is dependent o
 \begin{equation}
 	\mathrm{rate}(S \rightarrow I) = asi,
 \end{equation}
-where we have let $s,i$ denote the ratios of susceptibles and infectous in the population $N$. Similarly, the rates of transitions from class $I$ to $R$, and $R$ to $S$ are given by the recovery rate $b$ and the immunity loss rate $c$. These processes happen spontaneously and need no second individual, such that
+where we have let $s,i$ denote the ratios of susceptibles and infectous in the population. Similarly, the rate of transition from class $I$ to $R$, and $R$ to $S$ are given by the recovery rate $b$ and the immunity loss rate $c$. These processes happen spontaneously and need no second individual, such that
 \begin{equation}
 \begin{aligned}
 	\mathrm{rate}(I \rightarrow R) &= bi \\
 	\mathrm{rate}(R \rightarrow S) &= cr
 \end{aligned} \quad,
 \end{equation}
-where again $r$ is the ratio of recovering individual in population $N$.
-
-From this we can set up the coupled differential equations which describe the rates of transitions between the classes in the population:
+where again $r$ is the ratio of recovering individuals in the population. From this we can set up the coupled differential equations which describe the rate of transition between the classes in the population:
 \begin{equation} \label{eq:sirs-classic}
 \begin{aligned}
 	s' &= \mathrm{rate}(R \rightarrow S) - \mathrm{rate}(S \rightarrow I) = cr - asi \\
@@ -99,7 +97,7 @@ From this we can set up the coupled differential equations which describe the ra
 \end{aligned} \quad .
 \end{equation}
 
-The classical SIRS model reaches steady state when $s'=i'=r'=0$. Observing that $S + I + R = N$, we get the steady-state ratios
+The classical SIRS model reaches steady state when $s'=i'=r'=0$. Observing that $s + i + r = 1$, we get the steady-state ratios
 \begin{equation} \label{eq:sirs-classic-steady}
 \begin{aligned}
 	s^* &= b/a \\
@@ -107,7 +105,7 @@ The classical SIRS model reaches steady state when $s'=i'=r'=0$. Observing that 
 	r^* &= 1 - s^* - i^* \\
 \end{aligned} \quad .
 \end{equation}
-Here we note that for a disease requires that $i^* > 0$ for it to be able to establish itself within a population, meaning that the steady-state ratio of susceptibles $s^* = b/a < 1$. This ratio is otherwise known as the basic reproduction number $R_0$, defined as the rate of reproduction in a perfectly susceptible population -- that is; a population where $s = 1$, except for the initial infected individual. At a later stage, $s < 1$, and the general reproduction number $R_t$ is given by $as/b$;
+Here we note that a disease has established itself within a population if $i^* > 0$, meaning that the steady-state ratio of susceptibles $s^* = b/a < 1$. This ratio is otherwise known as the basic reproduction number $R_0$, defined as the rate of reproduction in a perfectly susceptible population -- that is; a population where $s = 1$, except for the initial infected individual. At a later stage, $s < 1$, and the general reproduction number $R_t$ is given by $as/b$;
 \begin{equation} \label{eq:reproduction-numbers}
 \begin{aligned}
 	R_0 &= b/a \\
@@ -138,22 +136,22 @@ Likewise, the steady-state ratios from Equation (\ref{eq:sirs-classic-steady}) n
 	r^* &= 1 - s^* - i^* \\
 \end{aligned} \quad ,
 \end{equation}
-where we again note that a disease needs $b/a < 1$ in order to establish itself, but given a vaccine, the new steady-state ratio is reduced due to the $f/c$ term in $i^*$.
+where we again note that a disease needs $b/a < 1$ in order to establish itself, but given a vaccine, the new steady-state infection ratio $i^*$ is reduced due to the $f/c$ term in Equation (\ref{eq:sirs-vaccinated-steady}).
 
 Given a disease with know transmission and immunity loss rates, we may predict the needed rate of vaccination $f$ in order to remove the disease from the population -- that is; $\mathrm{argmin}_{f} i^*(f) = 0$. From Equation (\ref{eq:sirs-vaccinated-steady}) we see that $f = c(a/b - 1) - i^*a(c/b + 1)$, and $i^* = 0$ is thus achieved when
 \begin{equation} \label{eq:vaccination-rate-min}
 	f \ge c(a/b - 1).
 \end{equation}
-Likewise, by setting $i = 0$ in Equation (\ref{eq:sirs-vaccinated-steady}) we find how large part of the population to vaccinate -- or rather; how large part of the population which has to have antibodies against a pathogen as $i \rightarrow i^* = 0$:
+Likewise, we find how large part of the population to vaccinate -- or rather; how large part of the population which has to have antibodies against a pathogen as $i \rightarrow i^* = 0$;
 \begin{equation} \label{eq:vaccination-fraction}
 	r \rightarrow r^* = 1 - \frac{1}{1 + f/c}.
 \end{equation}
-Thus, only after the disease has been eradicated does the $s^* = b/a$ relationship cease to exist. $s^*$ is then given as
+Thus, only after the disease has been eradicated does the $s^* = b/a$ relationship cease to hold. $s^*$ is then given as
 \begin{equation}
 	s^* = \frac{1}{1 + f/c}.
 \end{equation}
 
-At last, we may also introduce vital dynamics -- births and deaths -- into the SIRS model to be able to study the effect of deadly diseases over longer periods of time. Given a birth rate $e$, a background death rate $d$ and a the incidence death rate $d_I$, the full form of the SIRS model becomes
+At last, we may also introduce vital dynamics -- births and deaths -- into the SIRS model to be able to study the effect of deadly diseases over longer periods of time. Given a birth rate $e$, a background death rate $d$ and an incidence death rate $d_I$, the full form of the SIRS model becomes
 \begin{equation} \label{eq:sirs-vitals}
 \begin{aligned}
 	s' &= cr - asi - fs - ds + e \\
@@ -169,7 +167,7 @@ where we have assumed that newborns are initially susceptible. The steady-state 
 % - You need to explain how you implemented the methods and also say something about the structure of your algorithm and present some parts of your code
 % - You should plug in some calculations to demonstrate your code, such as selected runs used to validate and verify your results. The latter is extremely important!! A reader needs to understand that your code reproduces selected benchmarks and reproduces previous results, either numerical and/or well-known closed form expressions.
 
-The differential equation for the SIRS model as stated in Equations (\ref{eq:sirs-classic}), (\ref{eq:sirs-vaccinated}), (\ref{eq:sirs-vitals}) does not have an analytical solution. In this chapter we will develop two algorithms for solving them; one based on the Fourth order Runge-Kutta numerical method; and one based on Monte Carlo simulation.
+The differential equation for the SIRS model as stated in Equations (\ref{eq:sirs-classic}), (\ref{eq:sirs-vaccinated}), (\ref{eq:sirs-vitals}) does not have an analytical solution. In this chapter we will develop two algorithms for solving them; one based on the Fourth order Runge-Kutta method; and one based on the Monte Carlo method.
 
 \subsection{Fourth Order Runge-Kutta Algorithm for the SIRS Model} \label{sec:runge-kutta}
 The Fourth Order Runge-Kutta method, or simply RK4, is based on \textit{Simpson's Rule} for numerical integration, by which
@@ -182,7 +180,7 @@ Given a first-order differential equation on the form
 \begin{equation}
 	\frac{dy}{dt} = f(t, y),
 \end{equation}
-we can approximate $y(t)$ numerically by $y_t$ as
+we can use Simpson's Rule to approximate $y(t)$ numerically by $y_t$ as
 \begin{equation}
 \begin{aligned} \label{eq:re4-1st-step}
 		y_{i+1} &= y_i + \int_{t_i}^{t_{i+1}} f(t,y) dt \\
@@ -205,13 +203,13 @@ Following the same pattern, $y_{i+1}$ in the last term is approximated by $y^*_{
 \begin{equation}
 	y^{*}_{i+1} = y_i + h f(t_{i+1/2}, y^{**}_{i+1/2}).
 \end{equation}
-We end up with an approximation $y^{**}_{i+1}$ which is given by
+We end up with an approximation $y^{**}_{i+1}$ for $y_{i+1}$ which is given by
 \begin{equation}
 	y^{**}_{i+1} = y_i + \frac{h}{6} \big( f(t_i, y_i) + 2f(t_i + \frac{h}{2}, y^*_{i+1/2}) + 2f(t_i + \frac{h}{2}, y^{**}_{i+1/2}) + f(t_i+h, y^*_{i+1}) \big).
 \end{equation}
 The error is similar to that of Simpson's Rule, $O(h^5)$, which adds up to $O(h^4)$ over the whole run from $t_1=t_0+h$ to $t_n=t_0+nh$. This comes however at the cost of seven evaluations of $f(t,y)$ at each time step, compared with only one for Euler's method, which again has an overall error $O(h)$.
 
-Algorithmically, the steps are given in Listing \ref{lst:rk4-steps} and is very simple to implement. It runs in $\mathcal{O}(n)$ time and requires no memory of the earlier calculation steps. It is CPU-bound.
+Algorithmically, the steps in RK4 are very simple to implement. An outline is given in Listing \ref{lst:rk4-steps}. The RK4 algorithm runs in $\mathcal{O}(n)$ time and requires no memory of the earlier calculation steps. It is CPU-bound.
 
 \begin{lstlisting}[caption={Fourth order Runge-Kutta algorithm.},label={lst:rk4-steps},escapeinside={@}{@}] [!h]
 ALGORITHM RUNGE-KUTTA(f, ti, yi, h)
@@ -227,8 +225,7 @@ ALGORITHM RUNGE-KUTTA(f, ti, yi, h)
 END ALGORITHM
 \end{lstlisting}
 
-The SIRS model as described in Equation (\ref{eq:sirs-vitals}) can be implemented directly as it stands using the Runge-Kutta algorithm in Listing \ref{lst:rk4-steps}. We will however add an equation for the population growth rate $n'$, giving the following set of equations;
-
+The SIRS model as described in Equation (\ref{eq:sirs-vitals}) can be implemented directly as it stands using the Runge-Kutta algorithm in Listing \ref{lst:rk4-steps}. We will however add an equation for the population growth rate $n'$, which gives us the following set of equations;
 \begin{equation} \label{eq:sirs-rk4}
 \begin{aligned}
 	s' &= cr - asi - fs - ds + e \\
@@ -238,7 +235,7 @@ The SIRS model as described in Equation (\ref{eq:sirs-vitals}) can be implemente
 \end{aligned} \quad .
 \end{equation}
 
-We must select a suitable time step $h$, and update all approximations for each iterations, using only the values from the earlier iteration. However, we might update the last equation, say that for $r_i$ based on the results of the others, since $r_i = n_i - s_i - i_i$ at all times. This improves numerical stability. A possible implementation is outlined in Listing \ref{lst:rk4-sirs}.
+We must select a suitable time step $h$, and update all approximations for each iterations, using only the values from the earlier iteration. However, we might update the last equation, say that for $r_i$, based on the results of the others, since we need that $r_i = n_i - s_i - i_i$ at all times. This improves numerical stability. A possible implementation is outlined in Listing \ref{lst:rk4-sirs}.
 
 \begin{lstlisting}[caption={SIRS model Runge-Kutta algorithm.},label={lst:rk4-sirs},escapeinside={@}{@}] [!h]
 ALGORITHM SIRS-RUNGE-KUTTA(fs, fi, fn, t0, s0, i0, n0, n, h)
@@ -263,7 +260,7 @@ ALGORITHM SIRS-RUNGE-KUTTA(fs, fi, fn, t0, s0, i0, n0, n, h)
 END ALGORITHM
 \end{lstlisting}
 
-Possible extensions to the Fourth Order Runge-Kutta algorithm include the \textit{Runge-Kutta-Fehlberg} algorithm, which applies adaptive time step for error control and optimalization. See \cite{fys4150-notes} for more on this issue as well as numerical methods for solving differential equations in general.
+Possible extensions to the Fourth Order Runge-Kutta algorithm include the \textit{Runge-Kutta-Fehlberg} algorithm, which applies adaptive time step for error control and optimization. See \cite{fys4150-notes} for more on this issue as well as numerical methods for solving differential equations in general.
 
 \subsection{Monte Carlo Algorithm for the SIRS Model} \label{sec:monte-carlo}
 %lets us calculate discrete values
@@ -305,21 +302,21 @@ where we have let the upper-case letters $S,I,R,N$ denote discrete variables and
 	P(R \rightarrow D) &= dR \Delta t \\		
 \end{aligned} \quad .
 \end{equation}
-Here, we have let $D$ denote deaths from other causes than the disease; $D_I$ deaths from the disease; and $B$ denote births, which again are all assumed into class $S$, i.e. susceptible. Since we cannot have any half deaths or half births, and since at any point in the simulation do not know the development in the next steps, we must adapt $\Delta t$ such that at any time at most one individual is likely to transition from one class to another. To find $\Delta t$, observe that for all but the new infections, the highest probability for the transition out of one class $X$ into another class $Y$ occurs when all $N$ individuals are in $X$. For new infections we have the highest rate when exactly half of the population are in each class $S,I$. Consequently, the time step $\Delta t$ must satisfy
+Here, we have let $D$ denote deaths from other causes than the disease; $D_I$ deaths from the disease; and $B$ denote births, which again are all assumed into class $S$, i.e. susceptible. Since we cannot have any half deaths or half births, and since at any point in the simulation we do not know the development in the next steps, we must adapt $\Delta t$ such that at any time at most one individual is likely to transition from one class to another. To find $\Delta t$, observe that for all but the new infections, the highest probability for the transition out of one class $X$ into another class $Y$ occurs when all $N$ individuals are in $X$. For new infections we have the highest rate when exactly half of the population are in each class $S,I$. Consequently, the time step $\Delta t$ must satisfy
 \begin{equation}
 \begin{aligned}
 	\mathrm{argmax}_X  P(X \rightarrow Y) &= qN \Delta t \le 1 \\
 	\mathrm{argmax}_{S,I} P(S \rightarrow I) &= \frac{aN}{4} \Delta t \le 1
 \end{aligned} \quad .
 \end{equation}
-For remembering that we may also have time-varying transition rates, such as seasonal vaccination or policy-suppressed transmission rates, we must adapt the time step at each iteration in the simulation such that
+Remembering that we may also have time-varying transition rates, such as seasonal vaccination or policy-suppressed transmission rates, we must adapt the time step at each iteration in the simulation such that
 \begin{equation} \label{eq:dt-min}
-	\Delta t = \frac{1}{N} \cdot \mathrm{min} \bigg( \frac{4}{a}, \frac{1}{b}, \frac{1}{c}, \frac{1}{d}, \frac{1}{d_I}, \frac{1}{e}, \frac{1}{f} \bigg).
+	\Delta t_i = \frac{1}{N} \cdot \mathrm{min} \bigg( \frac{4}{a}, \frac{1}{b}, \frac{1}{c}, \frac{1}{d}, \frac{1}{d_I}, \frac{1}{e}, \frac{1}{f} \bigg).
 \end{equation}
 
-Now, having decided on the time step for iteration $i$, say, we draw a random number $\varepsilon_i \sim \mathcal{U}(0,1)$, and transition one individual from class $X$ to $Y$ if $\varepsilon_i < P_i(X \rightarrow Y)$. Since all transitions \textit{within one iteration} of the simulation are independent, we may reuse $\varepsilon_i$ when we do all the transition tests in that iteration. 
+Now, having decided on the time step for iteration $i$, we draw a random number $\varepsilon_i \sim \mathcal{U}(0,1)$, and transition one individual from class $X$ to $Y$ if $\varepsilon_i < P_i(X \rightarrow Y)$. Since all transitions \textit{within one iteration} of the simulation are independent, we may reuse $\varepsilon_i$ when we do all the transition tests in that iteration. 
 
-An outline of the resulting SIRS model Monte Carlo algorithm if given in Listing \ref{lst:mc-sirs}. As for the Runge-Kutta algorithm in Listing \ref{lst:rk4-sirs} we update \lstinline|R| by summing over the other classes, both for simplicity and for numerical stability.
+An outline of the resulting SIRS model Monte Carlo algorithm is given in Listing \ref{lst:mc-sirs}. As for the Runge-Kutta algorithm in Listing \ref{lst:rk4-sirs} we update \lstinline|R| by summing over the other classes, both for efficiency and for numerical stability.
 
 \begin{lstlisting}[caption={SIRS model Monte Carlo algorithm.},label={lst:mc-sirs},escapeinside={@}{@}] [!h]
 ALGORITHM SIRS-MONTE-CARLO()
@@ -352,7 +349,7 @@ ALGORITHM SIRS-MONTE-CARLO()
 END ALGORITHM
 \end{lstlisting}
 
-Even if the number of steps can not be determined before the algorithm is run, it too runs in linear time as long as we increase the problem along one axis only -- either the population size $N$; the simulation time $t_{sim}$; or the number of runs $n$. Consequently, time is given as $\mathcal{O}(nNt_{sim})$. Monte Carlo is CPU bound and requires no memory of the earlier calculation steps.
+Even if the number of steps can not be determined before the algorithm is run, the Monte Carlo SIRS model algorithm runs in linear time as long as we increase the problem along one axis only -- either the population size $N$; the simulation time $t_{sim}$; or the number of runs $n$. Consequently, time is given as $\mathcal{O}(nNt_{sim})$. Monte Carlo is CPU bound and requires no memory of the earlier calculation steps.
 
 
 %\clearpage
@@ -363,7 +360,7 @@ Even if the number of steps can not be determined before the algorithm is run, i
 % - An eventual reader should be able to reproduce your calculations if she/he wants to do so. All input variables should be properly explained.
 % - Make sure that figures and tables should contain enough information in their captions, axis labels etc so that an eventual reader can gain a first impression of your work by studying figures and tables only.
 
-We will now go through the results and see how our two numerical models perform. We will in all cases see corresponding results for both models. 
+We will now go through the results and see how our two algorithms for solving the SIRS model perform. We will in all cases present corresponding results for both models side-by-side. 
 
 The results are structured in the order of increasing complexity. We begin in Section \ref{sec:recovery-rates} by examining the importance of the ratio of the recovery and transmission rates in the establishment of a disease within a population. We saw this as the basic reproduction number $R_0$ in Section \ref{sec:background-sirs}. After looking at these static conditions, we will see how seasonal variations affects the dynamics of the disease over the year.
 
@@ -371,7 +368,7 @@ In Section \ref{sec:vaccines} we will introduce the effect of a vaccine and furt
 
 After that, in Section \ref{sec:vital-dynamics}, we will perform a longer simulation to see how infection levels of a deadly disease affects the long-term growth of a population with a fixed birth and background death rate.
 
-At last we will bring it all together when we try to reproduce the 2020 SARS-CoV-2 pandemic, with corresponding government policies, transmission rate seasonality and -- looking into the future -- finally the advent of a vaccine.
+At last we will bring it all together when we try to reproduce the 2020 COVID-19 pandemic, with corresponding government policies, transmission rate seasonality and -- looking into the future -- the advent of an efficient vaccine.
 
 Note that unless otherwise is stated, the disease parameters for transmission rate, recovery rate and immunity loss rate can be assumed to be $a=4, b=1, c=0.5$. For the Monte Carlo simulations, population size can be assumed to be $N=400$ and initial number of infectious individuals $I=100$.
 
@@ -380,7 +377,7 @@ Note that unless otherwise is stated, the disease parameters for transmission ra
 %present distributions 5<t<10000
 %Include seasonal variations
 
-As we saw in Section \ref{sec:background-sirs}, Equation (\ref{eq:reproduction-numbers}), success or failure on a infectious disease's term depends on its basic reproduction number $R_0$, which is given by its recovery vs. transmission ratio $a/b$. Figure \ref{fig:recovery-transmission-ratio} shows Runge-Kutta (RK4) and Monte Carlo (MC) simulations for four different ratios at constant immunity loss rate $c$. We see that gradually increasing the recovery rate also gradually decreases the steady-state infectious fraction $i^*$, as we would expect from Equation (\ref{eq:sirs-classic-steady});
+As we saw in Section \ref{sec:background-sirs}, Equation (\ref{eq:reproduction-numbers}), success or failure on a infectious disease's term depends on its basic reproduction number $R_0$, which is given by its recovery vs. transmission ratio $a/b$. Figure \ref{fig:recovery-transmission-ratio} shows Runge-Kutta (RK4) and Monte Carlo (MC) simulations for four different ratios. We see that gradually increasing the recovery rate also gradually decreases the steady-state infectious fraction $i^*$, as we would expect from Equation (\ref{eq:sirs-classic-steady});
 \begin{equation}
 	i^* = \frac{1 - b/4}{1 + 2b}.
 \end{equation}
@@ -393,7 +390,7 @@ For $b = 1$, the disease establishes itself in 25 \% of the population at any gi
 	\label{fig:recovery-transmission-ratio}
 \end{figure}
 
-With only 400 individuals in the population simulated by the MC algorithm in Figure \ref{fig:recovery-transmission-ratio}, the system still seems very deterministic. We see that only in the most dynamical periods do we have a noticeable shade around the curves, denoting the CI$_{99}$ interval. This impression is also largely confirmed when we look at Figure \ref{fig:recovery-transmission-ratio-distribution}. We see the distribution for each of the curves $S, I, R$ in the $b=3$ case, sampled since steady-state at $t=10$ until $t=10^4$. The distribution more closely resemble the anticipated normal distribution for all populations, but the distribution is markedly sharper for $I$. This is given by Equation (\ref{eq:transition-probabilities}) in that a deviation from the expectation value $\mu$ has a more forceful pull back towards $\mu$ for $I$ than for the other. From Equation (\ref{eq:dt-min}) we see that $a=4, b=3, c=0.5$ give the transition probability deltas
+With only 400 individuals in the population simulated by the MC algorithm in Figure \ref{fig:recovery-transmission-ratio}, the system still seems very deterministic. We see that only in the most dynamical periods do we have a noticeable shade around the curves, denoting the CI$_{99}$ interval. This impression is also largely confirmed when we look at Figure \ref{fig:recovery-transmission-ratio-distribution}. We see the distribution for each of the curves $S, I, R$ in the $b=3$ case, sampled since steady-state at $t=10$ until $t=10^4$. The distribution closely resemble the anticipated normal distribution for all populations, but the distribution is markedly sharper for $I$. This is given by Equation (\ref{eq:transition-probabilities}) in that a deviation from the expectation value $\mu$ has a more forceful pull back towards $\mu$ for $I$ than for the other. From Equation (\ref{eq:dt-min}) we see that $a=4, b=3, c=0.5$ give the transition probability deltas
 \begin{equation}
 \begin{aligned}
 	\Delta P(S \rightarrow I) &= \frac{3 \cdot (299 \cdot 15 - 300 \cdot 14)}{400} \cdot \Delta t = 2.1375 \Delta t \\		
@@ -401,7 +398,7 @@ With only 400 individuals in the population simulated by the MC algorithm in Fig
 	\Delta P(R \rightarrow S) &= 0.5 \cdot (85-86) \Delta t = - 0.5\Delta t \\		
 \end{aligned} \quad .
 \end{equation}
-Consequently, we will have a larger variation in $S$ and $R$ populations, while any deviation from the expectation value in the $I$ population will quickly be sent on to $R$. We should also expect that the distribution for $I$ is a little shifted upwards, which is also what we see in the figure.
+Consequently, we will have a larger variation in $S$ and $R$ populations, while any deviation from the expectation value in the $I$ population will quickly be sent on to $R$.
 
 \begin{figure}[!h]
 	\centering
@@ -419,8 +416,7 @@ By introducing seasonality in $a$, we can simulate the dynamics of the disease o
 	\label{fig:seasonal-transmission-rate}
 \end{figure}
 
-Lastly, we note that even though both the Runge-Kutta and Monte Carlo method run in linear time, Runge-Kutta is much more efficient in solving the SIRS model. Number of iterations $n$ can be selected freely, and the algorithm gives good results for as little as 50-100 steps per time unit. The Monte Carlo method, on the other hand, 
-
+Lastly, we note that even though both the Runge-Kutta and the Monte Carlo method run in linear time, Runge-Kutta is much more efficient in solving the SIRS model. Number of iterations $n$ can be selected freely, and the algorithm gives good results for as little as 50-100 steps per time unit. The Monte Carlo method, on the other hand, runs much slower both due to the re-sampling of the time steps, and due to the requirement of smaller time steps for a population of 400 with these disease parameters.
 
 \subsection{Introducing Vaccines} \label{sec:vaccines}
 %modelling expected i based on f and vice versa
@@ -429,7 +425,7 @@ Lastly, we note that even though both the Runge-Kutta and Monte Carlo method run
 
 In Section \ref{sec:background-sirs} we saw that, given a disease with parameters $a,b,c$, the level of infection can be controlled by vaccinating a corresponding portion of the population given by Equation (\ref{eq:vaccination-fraction}). To completely get rid of the disease, we must have a rate of vaccination $f \ge c(a/b - 1)$.
 
-In Figure \ref{fig:vaccination-rates} we see the effect of using vaccines against a disease with parameters $a=4, b=1, c=0.5$. We see that by increasing the level of immunity in the population from 50 \%, which is the level without vaccines, to 65 \% decreases the infection level by the same 15 \% from 25 \% to 10 \%.  Further increasing the immunity to 75 \% removes it all together. Thus, we see that by moving individuals from the $S$ class into $R$ class, we are in reality \textit{removing} them from the $I$ class. This corresponds to what we found in Equation (\ref{eq:sirs-vaccinated-steady}).
+In Figure \ref{fig:vaccination-rates} we see the effect of using vaccines against a disease with parameters $a=4, b=1, c=0.5$. We see that when we increase the level of immunity in the population from 50 \%, which is the level without vaccines, to 65 \% we decrease the infection level by the same 15 \%, from 25 \% to 10 \%.  Further increasing the immunity to 75 \% removes it all together. Thus, we see that by \textit{moving} individuals from the $S$ class into $R$ class, we are in reality \textit{removing} them from the $I$ class. This corresponds to what we found in Equation (\ref{eq:sirs-vaccinated-steady}).
 
 \begin{figure}[!h]
 	\centering
@@ -453,7 +449,7 @@ Similar to what we saw for seasonal variations in the transmission rate in the f
 %ratio reaches equilibrium independently of the d,dI,e ratio
 %Monte Carlo is optimistic -- >99% sure about survival; RK4 more pessimistic -- collapse of the population
 
-Let us now study the effect of a disease on the long-term development of the population by introducing an incidence death rate $d_I$ from the disease, along with a background death rate $d$ and birth rate $e$. We assume a constant background death rate $d=0.01$, birth rate $e=0.02$, and a apply different $d_I$ for a disease with otherwise fixed, constant parameters $a=4, b=1, c=0.5$. In Figure \ref{fig:dynamic-pop-infected-ratio} we see that as for the constant population cases in Section \ref{sec:recovery-rates}, the fraction of infectious individuals finds a steady state. The level does not correspond to the levels we saw earlier, though, due to the imbalance introduced by $d, e, d_I$ in the steady-state equations. In the figure we see that the Monte Carlo and Runge-Kutta results correspond quite well, except for the $d_I = 1.00$ case, where Runge-Kutta presents a constant fraction, while Monte Carlo predicts a collapse, and hence eradication of the disease, at around $t=25$. The simulation has been run 30 times, and the CI$_{99}$ follows the mean towards zero.
+Let us now study the effect of a disease on the long-term development of the population by introducing an incidence death rate $d_I$ from the disease, along with a background death rate $d$ and birth rate $e$. We assume a constant rates $d=0.01$ and $e=0.02$, and apply various $d_I$ for a disease with otherwise fixed, constant parameters $a=4, b=1, c=0.5$. In Figure \ref{fig:dynamic-pop-infected-ratio} we see that as for the constant population cases in Section \ref{sec:recovery-rates}, the fraction of infectious individuals finds a steady state. The level does not correspond to the levels we saw earlier, though, due to the imbalance introduced by $d, e, d_I$ in the steady-state equations. In the figure we see that the Monte Carlo and Runge-Kutta results correspond quite well, except for the $d_I = 1.00$ case, where Runge-Kutta presents a constant fraction, while Monte Carlo predicts a collapse, and hence eradication of the disease, at around $t=25$. The simulation has been run 30 times, and the CI$_{99}$ follows the mean towards zero.
 
 
 
@@ -466,9 +462,9 @@ Let us now study the effect of a disease on the long-term development of the pop
 	\label{fig:dynamic-pop-infected-ratio}
 \end{figure}
 
-The explanation for the collapse in infections predicted by Monte Carlo becomes clear when we look at the development of the populations. In the $d_I=1.00$ case, the population is all but extinguished, and it is in this scenario that Monte Carlo predicts the last infected individual to die, while there still may be a small population left which then starts to grow ever so slowly. This outcome is not possible in a Runge-Kutta simulation since the populations are only represented by continuous fractions, which would not go to zero for these disease parameters.
+The explanation for the collapse in infections predicted by Monte Carlo becomes clear when we look at the development of the populations. In the $d_I=1.00$ case, the population is all but extinguished, and it is in this scenario that Monte Carlo predicts the last infected individual to either recover or die, while there still may be a small population left which then starts to grow ever so slowly. This outcome is not possible in a Runge-Kutta simulation since the populations are only represented by continuous fractions, which would not go to zero for these disease parameters.
 
-The small population at the end of the $d_I=1.00$ case also explains the high variance in the mean value, since it reflects incremental changes on a small scale. Increasing the population size $N$ to 2000 makes the CI$_{99}$ narrower, but this time the disease does not vanish, so there is some threshold for this given the parameters (result not shown).
+The small population at the end of the $d_I=1.00$ case also explains the high variance in the mean value, since it reflects incremental changes on a small scale. Increasing the population size $N$ to 2000 makes the CI$_{99}$ narrower, and this time the disease does not vanish, so there is some threshold for this given the parameters (result not shown).
 
 Another interesting case is the $d_I=5.00$, which represents a disease so deadly that $R_0 < 1$, and hence the disease disappears by itself. For $d_I=0.04$, the population size remains constant, meaning that the birth surplus $e-d = 0.01$ correspond exactly to the deaths $d_Ii = 0.04 \cdot 0.25 = 0.01$.
 
@@ -487,13 +483,13 @@ Another interesting case is the $d_I=5.00$, which represents a disease so deadly
 %vaccine availability as exponential curve
 %effect of early introduction of lockdown vs strictness
 
-We will now combine what we have learned from looking at the seasonality of vaccines and transmission rates in the above results with government policies and non-availability of vaccines, using the COVID-19 pandemic as a case study \cite{who-url}. The science on this disease is still uncertain, but we will assume a strong seasonal factor in its transmission rate which peaks at new year; $a(t) = 3 + 2.25 \cos (5\pi t) $, where one year is 10 time units. We will also assume an influenza-like vaccination seasonality once that gets going, with a peak during the autumn months, such that $f(t) = 1 + 0.5 \cos (5\pi (t+2.5))$. Further, and critically, we will assume government-imposed \textit{social lockdowns} put into force at different times during the onset of the pandemic and see how that affects the outcome, along with the effect of the \textit{strictness} of those lockdowns. Other parameters are keps as before; $b=1, c=0.5, N=400$, but we assume $I=20$ or 5 \% at the onset.
+We will now combine what we have learned from looking at the seasonality of vaccines and transmission rates in the above results with government policies and non-availability of vaccines, using the COVID-19 pandemic as a case study \cite{who-url}. The science on this disease is still uncertain, but we will assume a strong seasonal factor in its transmission rate which peaks at new year; $a(t) = 3 + 2.25 \cos (5\pi t) $, where one year is 10 time units. We will also assume an influenza-like vaccination seasonality once that gets going, with a peak during the autumn months, such that $f(t) = 1 + 0.5 \cos (5\pi (t+2.5))$. Further, and critically, we will assume government-imposed \textit{social lockdowns} put into force at different times during the onset of the pandemic and see how that affects the outcome, along with the effect of the \textit{strictness} of those lockdowns. Other parameters are kept as before; $b=1, c=0.5, N=400$, but we assume $I=20$ or 5 \% at the onset.
 
 Even if COVID-19 is a deadly disease, potentially, the incident death rate is still low enough for that we can ignore it and set all vitality rates to zero.
 
-In Figure \ref{fig:covid-policy} we see in the upper pane the first COVID-19 lockdown as a bathtub shaped gray-dotted line, and the resulting transmission rate $a(t)$ for the cases of 'immediate' lockdown ($t=0$); 'early' lockdown ($t=0.5$); 'late' lockdown ($t=1$); and 'none'. Each lockdown has the same length $\Delta t = 5$ as well as the same strictness, meaning that they reduce the seasonal infection rate by 90 \%, but as explained were implemented at different times. 
+In Figure \ref{fig:covid-policy} we see in the upper pane the first COVID-19 lockdown as a bathtub shaped gray-dotted line, and the resulting transmission rate $a(t)$ for the cases of 'immediate' lockdown ($t=0$); 'early' lockdown ($t=0.5$); 'late' lockdown ($t=1$); and 'none'. Each lockdown has the same length $\Delta t = 5$ as well as the same strictness, meaning that they reduce the seasonal infection rate by 90 \%, but as explained are implemented at different times. 
 
-In the middle pane, the first lockdown is 'immediate' in all cases ($t=0$), and with a new lockdown implemented in late autumn at $t=7.5$ with duration $\Delta t = 7$. This time the lockdowns have different strictness ranging from 'strict' (-90 \%); 'medium' (-70 \%); 'loose' (-20 \%); and 'none'.
+In the middle pane, the first lockdown is 'immediate' in all cases ($t=0$), and with a new lockdown implemented in early autumn at $t=7.5$ with duration $\Delta t = 7$. This time the lockdowns have different strictness ranging from 'strict' (-90 \%); 'medium' (-70 \%); 'loose' (-20 \%); and 'none'.
 
 Finally, in the lower pane we see the vaccination rate. The assumption here is that once this becomes widely available at $t=15$, it follows a seasonal pattern.
 
@@ -506,7 +502,7 @@ Finally, in the lower pane we see the vaccination rate. The assumption here is t
 
 Figure \ref{fig:covid-infection-sim} shows the result of each of the lockdown policies in Figure \ref{fig:covid-policy}, simulated with Runge-Kutta and Monte Carlo. We see in the upper panes that the only policy which has a considerable effect is an 'immediate' implementation. This limits the peak to about 20 \%, from an initial infection ratio of 5 \%. Later implementation has little to no effect, since the transmission rate -- which is the main driver -- is already coming down fast. All cases reach 40-50 \%. We see, however, that the later lockdowns have the same effect as the immediate towards the summer, when the infection has all but vanished and restrictions are relaxed.
 
-In the lower pane the course of the pandemic over the next few of years is simulated. First, we see that if only 'loose' lockdown policies are implemented, they almost no effect at all. However, 'strict' policies still can not reduce the infections to less than some 20 \% in the first wave, and 10 \% in the second. Measured towards this, the 'medium' policy performs relatively well at 30 and 20 \%. The later trajectories are less dependent on the policy decisions of the first year of the pandemic. As soon as the vaccines are introduced, which happens slowly during the first half of the second year, the disease is predicted to gradually vanish, luckily.
+In the lower pane the course of the pandemic over the next few of years is simulated. First, we see that if only 'loose' lockdown policies are implemented, they have almost no effect at all. However, 'strict' policies will not reduce the infections to less than some 20 \% in the first wave, and 10 \% in the second. Measured towards this, the 'medium' policy performs relatively well at 30 and 20 \%. The later trajectories are less dependent on the policy decisions of the first year of the pandemic. As soon as the vaccines are introduced, which happens slowly during the first half of the second year, the disease is predicted to gradually vanish, luckily.
 
 \begin{figure}[!h]
 	\centering
@@ -525,13 +521,11 @@ In the lower pane the course of the pandemic over the next few of years is simul
 %No use for MC in these calculations; more of an academic interest, plus proof of concept
 %simulations show that with the early introduction of lockdown has best effect; late strict lockdowns have little effect other than making the summer lulls calmer. Timing is the deciding factor; strictness as modifier of success.
 
-We have seen that two widely different methods, the Fourth Order Runge-Kutta and the Monte Carlo, each solves the set of differential equations describing the SIRS model. RK4 is deterministic and the accuracy of its solution is determined only by the step size $h$. MC, on the other hand, is stochastic and gives an estimate $\bar{\mu}_i$ for each function value $y(t_i)$. Consequently, the methods may give widely different solutions, especially when applied on a small, discrete problem, such as the SIRS model with $N=400$. We saw that in one case, MC would predict with high confidence that a disease would vanish from the population, while RK4 continued to keep a fixed fraction of the population in the $I$ class. Both of these solutions are valid, but valid for a somewhat different problem: The continuous in the RK4 case; and the discrete in the MC case. 
+We have seen that two widely different methods, the Fourth Order Runge-Kutta and the Monte Carlo, each solves the set of differential equations describing the SIRS model. RK4 is deterministic and the accuracy of its solution is determined only by the step size $h$. MC, on the other hand, is stochastic and gives an estimate $\bar{\mu}_i$ for each function value $y(t_i)$. Consequently, the methods may give different solutions, especially when applied on a small, discrete problem, such as the SIRS model with $N=400$. We saw that in one case, MC would predict with high confidence that a disease would vanish from the population, while RK4 continued to keep a fixed fraction of the population in the $I$ class. Both of these solutions are valid, but valid for a somewhat different problem: The continuous model in the RK4 case; and the discrete model in the MC case. 
 
-As the population increase, the differences between the two methods decrease. For large populations, a continuous model of the problem will in many cases serve us best, since MC runs in $\mathcal{O}(Nn_{sim}t_{sim})$ time, where $N$ is the population, $n_{sim}$ is the number of simulations to estimate $y(t_i)$, and $t_{sim}$ is the simulation time. In solving the SIRS model, this has tended to be slower than the $\mathcal{O}(n)$ run time of RK4.
+As the population increase, the differences between the two methods decrease. For large populations, a continuous model of the problem will in many cases serve us best, since MC runs in $\mathcal{O}(Nn_{sim}t_{sim})$ time, where $N$ is the population, $n_{sim}$ is the number of simulations to estimate $y(t_i)$, and $t_{sim}$ is the simulation time. In solving the SIRS model, this has tended to be slower than the RK4, which runs in  $\mathcal{O}(n)$ time.
 
-One caveat for the use of the SIRS model is also that the estimate $\bar{\mu}_i$ may also become somewhat skewed in either direction, due to the change in probability when the population class adds or looses an individual. In one direction a transition in the next iteration becomes more likely, while in the other, it becomes less, as we saw especially for the steady-state distribution for the $I$ class in Section \ref{sec:recovery-rates}, Figure \ref{fig:recovery-transmission-ratio-distribution}.
-
-Relating to the SIRS model, we have reproduced known benchmarks of disease modeling such as the importance of the basic reproduction number $R_0 = b/a$ (recovery vs. transmission rates); the relationship between disease the parameters $a,b$ and the immunity loss rate $c$ and vaccination rate $f$; and the somewhat surprising fact that vaccination empties the $I$ class rather than the $S$ class. Also, when performing the COVID-19 case study (with given assumptions), we have seen the importance of timing of government-imposed lockdown -- a strict lockdown implemented too late has nearly no effect, while a lighter lockdown implemented at the right time has a significant effect. The underlying pattern here is that when faced with a pathogen for which there is no vaccine available and which presents a strong seasonal transmission rate $a$, the only option for forcing $R_t = as/b < 1$ is to enforce policies to reduce $a$ sufficiently during the peaks, and then relax the policies when circumstances are more beneficial. We also saw that as soon as a vaccine becomes readily available, the disease can be suppressed until eradication.
+Relating to the SIRS model, we have reproduced known benchmarks of disease modeling such as the importance of the basic reproduction number $R_0 = b/a$ (recovery vs. transmission rates); the relationship between disease the parameters $a,b$ and the immunity loss rate $c$ and vaccination rate $f$; and the somewhat surprising fact that vaccination empties the $I$ class rather than the $S$ class. Also, when performing the COVID-19 case study (with given assumptions), we have seen the importance of timing when it comes to government-imposed lockdown -- a strict lockdown implemented too late has nearly no effect, while a lighter lockdown implemented at the right time has a significant effect. The underlying pattern here is that when faced with a pathogen for which there is no vaccine available and which presents a strong seasonal transmission rate $a$, the only option for forcing $R_t = as/b < 1$ is to enforce policies to reduce $a$ sufficiently during the peaks, and then relax the policies when circumstances are more beneficial. We also saw that as soon as a vaccine becomes readily available, the disease can be suppressed until eradication.
 
 For future work relating to disease modeling, it would be interesting to investigate how the Ising model, or even the related Potts model, could be applied, and to compare the results against the benchmarks of this report \cite{fys4150-notes}. Combining them could even let us introduce \textit{locality} into our model -- creating clusters of high and low densities of the classes $S,I,R$ in the population. This could be used for further policy planning with regards to restricting person-to-person interactions, or even the distribution of vaccines. It would also be interesting to find similar cases in the social studies, where a continuous model like RK4 would be applied on the macro scale, while a discrete model like the Monte Carlo model which we have developed here would be used on the micro scale.
 
