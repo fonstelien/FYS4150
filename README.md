@@ -3,7 +3,7 @@ This repository contains my reports and source code for each of the five project
 
 *An introduction to numerical methods which are used in solving problems in physics and chemistry, including solutions of differential equations, matrix operations and eigenvalue problems, interpolation and numerical integration, modeling of data and Monte Carlo methods.*
 
-Most of the code is implemented in C++, using the [Armadillo library](http://arma.sourceforge.net/), and all graphics are created with Python. The final grade in the course was given based on the last three projects:
+Most of the methods are implemented in C++ using the [Armadillo library](http://arma.sourceforge.net/), and all graphics are created with Python. The final grade in the course was given based on the last three projects:
 * [Project 3](https://github.com/fonstelien/FYS4150/blob/master/project3/report/project3.pdf): *Celestial Mechanics with Numerical Methods* (score 97/100)
 
     The classical *n*-body problem in mechanics. We model the Solar System with the Velocity Verlet method and investigate how the Solar System would look like if there were small changes in Newton's laws, as well as reproducing the [perihelion precession of Mercury](https://en.wikipedia.org/wiki/Tests_of_general_relativity#Perihelion_precession_of_Mercury).
