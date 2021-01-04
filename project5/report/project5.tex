@@ -172,7 +172,7 @@ The differential equation for the SIRS model as stated in Equations (\ref{eq:sir
 \subsection{Fourth Order Runge-Kutta Algorithm for the SIRS Model} \label{sec:runge-kutta}
 The Fourth Order Runge-Kutta method, or simply RK4, is based on \textit{Simpson's Rule} for numerical integration, by which
 \begin{equation} \label{eq:simpsons-rule}
-	\int_{a}^{b} f(x) dx = \frac{1}{6} \big( f(a) + 4f((b+a)/2) + f(b) \big) + O(h^5),
+	\int_{a}^{b} f(x) dx = \frac{b-a}{6} \big( f(a) + 4f((b+a)/2) + f(b) \big) + O(h^5),
 \end{equation}
 -- that is; an approximation of $f$'s slope over $[a,b]$ by the weighted function values at the end points $a,b$ and the midpoint $(a+b)/2$.
 
