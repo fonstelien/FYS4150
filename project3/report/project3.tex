@@ -449,6 +449,13 @@ We note again that $e<1$ gives a closed elliptical or circular orbit, and $e \ge
 
 Figure \ref{fig:eccentricity} shows the Sun-Earth system with various initial velocities giving closed and open trajectories, which are in accordance with Equation (\ref{v0}). We also see that the mechanical energy is negative for the closed trajectories, and zero or positive for the open, again in accordance with Equation (\ref{v0}), as we showed in Equations (\ref{mech-const}), (\ref{e>1}) and (\ref{e=0}).
 
+\begin{figure}[!htb]
+	\centering
+	\includegraphics[width=.5\linewidth]{eccentricity.png}
+	\caption{Various degrees of eccentricity versus initial velocity $v_0$ (Equation \ref{v0}) with Velocity Verlet. We see that mechanical energy $E_M < 0$ gives closed elliptic or circular orbits, while $E_M \ge 0$ give open trajectories (body escapes). Simulations were run with $10^4$ integration points per year, over 20 years. Initial conditions were \lstinline|pos = \{1.0, 0.0, 0.0\}| and \lstinline|vel = \{0.0, v0, 0.0\}| with fixed sun.}
+	\label{fig:eccentricity}
+\end{figure}
+
 Now, it would be interesting to put Kepler's third law to the test by modifying Newton's gravitational law. We re-phrase it by replacing the inverse square $r^2$ factor by $r^{\beta}$, and adjust $\beta$ to see what happens to the planet orbit;
 \begin{equation}
 	F_G = \frac{GMm}{r^{\beta}},
@@ -459,10 +466,10 @@ and the corresponding potential energy $E_P$ is then on the form
 \end{equation}
 To reflect this in our Velocity Verlet solver, we update \lstinline|update_acceleration()| service in \lstinline|Planet|, and  \lstinline|potential_energy()| service in \lstinline|Solver|. When we change $\beta$ away from 2, we should still expect that energy and angular momentum are conserved in this alternate physical domain. Kepler's third law should not hold, however, since that is a consequence of Newton's gravitational law in combination with Newton's second law. 
 
-Figure \ref{fig:force} shows just that. As we see to the left, even a slight change of 1/1000th clearly makes the planet drift out of its regular orbit. Increasing $\beta$ to 2.5 gives rise to a beautiful doughnut shape, which however does not seem to be repeating itself. The only closed orbit that seems possible in this domain is the circular, which occurs at Further increasing $\beta$ to 3, we see a collapse of the orbit for $v_0 < 2\pi$. The orbit is circular for $v_0 = 2\pi$, and open for $v_0 > 2\pi$. In all cases of $\beta$, we see that both energy and angular moment are conserved.
+Figure \ref{fig:force} shows just that. As we see to the left, even a slight change of 1/1000th clearly makes the planet drift out of its regular orbit. Increasing $\beta$ to 2.5 gives rise to a beautiful doughnut shape, which however does not seem to be repeating itself. The only closed orbit that seems possible in this domain is the circular. Further increasing $\beta$ to 3, we see a collapse of the orbit for $v_0 < 2\pi$. The orbit is circular for $v_0 = 2\pi$, and open for $v_0 > 2\pi$. In all cases of $\beta$, we see that both energy and angular moment are conserved.
 
 If we concentrate on $\beta = 3$, in a way it still makes sense to talk about \textit{eccentricity} in this domain, too. With scaling, we get the same initial velocities as in Equation (\ref{v0}), except for the elliptic orbit, which will not occur:
-\begin{equation} \label{v0}
+\begin{equation} \label{v0_beta3}
 \begin{aligned}
 	\text{collapse:}& \quad v_0 < 2 \pi \\
 	\text{circular orbit:}& \quad v_0 = 2 \pi \\
@@ -474,12 +481,7 @@ where we have assumed $r_0 = 1$. The circular is easily explained, since $r_0 = 
 	E_M = E_K + E_P = \frac{1}{2}mv_0^2 - \frac{4\pi^2 m}{2r_0^2} = \frac{1}{2}m \bigg(\frac{4\pi^2}{r_0^2} \bigg) - \frac{4\pi^2 m}{2r_0^2} = 0.
 \end{equation}
 
-\begin{figure}[!htb]
-	\centering
-	\includegraphics[width=.5\linewidth]{eccentricity.png}
-	\caption{Various degrees of eccentricity versus initial velocity $v_0$ (Equation \ref{v0}) with Velocity Verlet. We see that mechanical energy $E_M < 0$ gives closed elliptic or circular orbits, while $E_M \ge 0$ give open trajectories (body escapes). Simulations were run with $10^4$ integration points per year, over 20 years. Initial conditions were \lstinline|pos = \{1.0, 0.0, 0.0\}| and \lstinline|vel = \{0.0, v0, 0.0\}| with fixed sun.}
-	\label{fig:eccentricity}
-\end{figure}
+
 
 \begin{figure}[!htb]
 	\centering

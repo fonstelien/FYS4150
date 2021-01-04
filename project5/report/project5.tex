@@ -77,7 +77,7 @@ The classical \textit{SIRS} model describes the spread of disease in a populatio
 \begin{equation}
 	S \rightarrow I \rightarrow R \rightarrow S,
 \end{equation}
-and hence the name. The rates of the transition $S \rightarrow I$ is dependent of a transition rate $a$, and the chance $S/N \cdot I/N$ that each of two interacting individuals are in the classes $S$ and $I$;
+and hence the name. The rates of the transition $S \rightarrow I$ is dependent of a transmission rate $a$, and the chance $S/N \cdot I/N$ that each of two interacting individuals are in the classes $S$ and $I$;
 \begin{equation}
 	\mathrm{rate}(S \rightarrow I) = asi,
 \end{equation}
@@ -105,16 +105,16 @@ The classical SIRS model reaches steady state when $s'=i'=r'=0$. Observing that 
 	r^* &= 1 - s^* - i^* \\
 \end{aligned} \quad .
 \end{equation}
-Here we note that a disease has established itself within a population if $i^* > 0$, meaning that the steady-state ratio of susceptibles $s^* = b/a < 1$. This ratio is otherwise known as the basic reproduction number $R_0$, defined as the rate of reproduction in a perfectly susceptible population -- that is; a population where $s = 1$, except for the initial infected individual. At a later stage, $s < 1$, and the general reproduction number $R_t$ is given by $as/b$;
+Here we note that a disease has established itself within a population if $i^* > 0$, meaning that the steady-state ratio of susceptibles $s^* = b/a < 1$. The inverse of this ratio is otherwise known as the basic reproduction number $R_0$, defined as the rate of reproduction in a perfectly susceptible population -- that is; a population where $s = 1$, except for the initial infected individual. At a later stage, $s < 1$, and the general reproduction number $R_t$ is given by $as/b$;
 \begin{equation} \label{eq:reproduction-numbers}
 \begin{aligned}
-	R_0 &= b/a \\
+	R_0 &= a/b \\
 	R_t &= as/b \\
 \end{aligned} \quad .
 \end{equation}
 See \cite{milligan2015}.
 
-During the outbreak of disease -- be it the annual influenza or the black plague -- governments and individuals will try to reduce $R_t$ as far as possible or practicable. This can be done only by suppression, i.e. reducing the transmission rate $a$, since as long as the disease exists, $s^* = b/a$, as we will see next. 
+During the outbreak of disease -- be it the annual influenza or the black plague -- governments and individuals will try to reduce $R_t$ as far as possible or practicable. This can be done only by suppression, i.e. reducing the transmission rate $a$, since as long as the disease exists, $s^* = b/a$. Even having vaccines against the disease will not change that, as we will see next. 
 
 If we denote the rate of vaccination within a population $f$, and limit vaccination to those in the $S$ class only, we can describe the rate transition into $R$ from $S$ as
 \begin{equation}
@@ -183,8 +183,8 @@ Given a first-order differential equation on the form
 we can use Simpson's Rule to approximate $y(t)$ numerically by $y_t$ as
 \begin{equation}
 \begin{aligned} \label{eq:re4-1st-step}
-		y_{i+1} &= y_i + \int_{t_i}^{t_{i+1}} f(t,y) dt \\
-		&= \frac{h}{6} \big( f(t_i, y_i) + 4f(t_{i+1/2}, y_{i+1/2}) + f(t_{i+1}, y_{i+1}) \big) + O(h^5)
+		&y_{i+1} = y_i + \int_{t_i}^{t_{i+1}} f(t,y) dt \\
+		&= y_i + \frac{h}{6} \big( f(t_i, y_i) + 4f(t_{i+1/2}, y_{i+1/2}) + f(t_{i+1}, y_{i+1}) \big) + O(h^5)
 \end{aligned} \quad ,
 \end{equation}
 where $h=t_{i+1} - t_i$ is the step size. The midpoint and endpoint values $y_{i+1/2}$ and $y_{i+1}$ are unknown to us. We may approximate $y_{i+1/2}$ as $y^*_{i+1/2}$ by \textit{Euler's Forward Method} with step size $h/2$ such that
@@ -205,9 +205,12 @@ Following the same pattern, $y_{i+1}$ in the last term is approximated by $y^*_{
 \end{equation}
 We end up with an approximation $y^{**}_{i+1}$ for $y_{i+1}$ which is given by
 \begin{equation}
-	y^{**}_{i+1} = y_i + \frac{h}{6} \big( f(t_i, y_i) + 2f(t_i + \frac{h}{2}, y^*_{i+1/2}) + 2f(t_i + \frac{h}{2}, y^{**}_{i+1/2}) + f(t_i+h, y^*_{i+1}) \big).
+\begin{aligned}
+	y^{**}_{i+1} = y_i + \frac{h}{6} \big(& f(t_i, y_i) + 2f(t_i + \frac{h}{2}, y^*_{i+1/2}) + \\
+														 &2f(t_i + \frac{h}{2}, y^{**}_{i+1/2}) + f(t_i+h, y^*_{i+1}) \big).
+\end{aligned}
 \end{equation}
-The error is similar to that of Simpson's Rule, $O(h^5)$, which adds up to $O(h^4)$ over the whole run from $t_1=t_0+h$ to $t_n=t_0+nh$. This comes however at the cost of seven evaluations of $f(t,y)$ at each time step, compared with only one for Euler's method, which again has an overall error $O(h)$.
+The error is similar to that of Simpson's Rule, $O(h^5)$, which adds up to $O(h^4)$ over the whole run from $t_1=t_0+h$ to $t_n=t_0+nh$. This comes however at the cost of seven evaluations of $f(t,y)$ at each time step, compared with only one for Euler's method, but which has an overall error $O(h)$.
 
 Algorithmically, the steps in RK4 are very simple to implement. An outline is given in Listing \ref{lst:rk4-steps}. The RK4 algorithm runs in $\mathcal{O}(n)$ time and requires no memory of the earlier calculation steps. It is CPU-bound.
 
@@ -235,7 +238,7 @@ The SIRS model as described in Equation (\ref{eq:sirs-vitals}) can be implemente
 \end{aligned} \quad .
 \end{equation}
 
-We must select a suitable time step $h$, and update all approximations for each iterations, using only the values from the earlier iteration. However, we might update the last equation, say that for $r_i$, based on the results of the others, since we need that $r_i = n_i - s_i - i_i$ at all times. This improves numerical stability. A possible implementation is outlined in Listing \ref{lst:rk4-sirs}.
+We must select a suitable time step $h$, and update all approximations for each iterations, using only the values from the earlier iteration. However, we might update the last equation, say that for $r_k$, based on the results of the others, since we need that $r_k = n_k - s_k - i_k$ at all times. This improves numerical stability. A possible implementation is outlined in Listing \ref{lst:rk4-sirs}.
 
 \begin{lstlisting}[caption={SIRS model Runge-Kutta algorithm.},label={lst:rk4-sirs},escapeinside={@}{@}] [!h]
 ALGORITHM SIRS-RUNGE-KUTTA(fs, fi, fn, t0, s0, i0, n0, n, h)
@@ -268,17 +271,17 @@ The Runge-Kutta method inherently implicates continuous values for the ratios of
 
 Before we run the simulation, however, the expectation value at each step in the trajectory is exactly the solution to the differential equation describing the SIRS model;
 \begin{equation}
-	\mathbb{E}(y_i) = y(t_i)
+	\mathbb{E}(y^*_i) = y(t_i)
 \end{equation}
 The Monte Carlo method will therefore give us an estimate $\bar{\mu}_i$ of the solution if we calculate its mean value. The estimate follows the $t$-distribution and if we run $n$ simulations it has standard deviation $\bar{\sigma}_i$ given by
 \begin{equation}
-	\bar{\sigma}_i^2 = \frac{1}{n-1} \sum_{j=1}^{n} (y_j - \bar{\mu}_i)^2.
+	\bar{\sigma}_i^2 = \frac{1}{n-1} \sum_{j=1}^{n} (y^*_j - \bar{\mu}_i)^2.
 \end{equation}
 From this we can calculate a confidence interval for the \textit{true} $\mu_i = y(t_i)$, i.e. the solution to the equations. A $100 \cdot (1-\alpha)$ \% confidence interval is given by
 \begin{equation}
-	\bar{\mu}_i - t_{\alpha/2, \nu} \frac{\sigma}{\sqrt{n}} < y(t_i) < \bar{\mu}_i + t_{\alpha/2, \nu} \frac{\sigma}{\sqrt{n}},
+	\bar{\mu}_i - t_{\alpha/2, \nu} \frac{\bar{\sigma}_i}{\sqrt{n}} < y(t_i) < \bar{\mu}_i + t_{\alpha/2, \nu} \frac{\bar{\sigma}_i}{\sqrt{n}},
 \end{equation}
-where $\nu = n-1$ denotes the $t$-distribution's degrees of freedom. See \cite{devore2012}. As $\nu \rightarrow \infty$, the $t$-distribution converges towards the normal distribution, but for small $n$, i.e in the 10's or 20's, it does matter. A CI$_{90}$ has a multiplier of 1.64 for the normal distribution, while it is 1.83 for the $t$-distribution with $\nu=9$. Corresponding values for CI$_{99}$ are 2.58 and 3.25.
+where $\nu = n-1$ denotes the $t$-distribution's degrees of freedom. See \cite{devore2012}. As $\nu \rightarrow \infty$, the $t$-distribution converges towards the normal distribution, but for small $n$, i.e in the 10's or 20's, the difference between them does matter. A CI$_{90}$ has a multiplier of 1.64 for the normal distribution, while it is 1.83 for the $t$-distribution with $\nu=9$. Corresponding values for CI$_{99}$ are 2.58 and 3.25.
 
 We implement the Monte Carlo method by first discretizing the SIRS model in Equation (\ref{eq:sirs-vitals});
 \begin{equation} \label{eq:sirs-vitals-discrete}
@@ -336,7 +339,7 @@ ALGORITHM SIRS-MONTE-CARLO()
 		epsilon = draw_random_number()
 		{collect incremental transitions from 
 		 all combinations in @Equation (\ref{eq:transition-probabilities})@.
-		 Make all transitions where probability < epsilon}
+		 Make all transitions where probability > epsilon}
 		S = S + {transitions into class S}
 		I = I + {transitions into class I}
 		N = N + {sum of births and deaths}
@@ -349,7 +352,7 @@ ALGORITHM SIRS-MONTE-CARLO()
 END ALGORITHM
 \end{lstlisting}
 
-Even if the number of steps can not be determined before the algorithm is run, the Monte Carlo SIRS model algorithm runs in linear time as long as we increase the problem along one axis only -- either the population size $N$; the simulation time $t_{sim}$; or the number of runs $n$. Consequently, time is given as $\mathcal{O}(nNt_{sim})$. Monte Carlo is CPU bound and requires no memory of the earlier calculation steps.
+Even if the number of steps can not be determined before the algorithm is run, the Monte Carlo SIRS model algorithm runs in linear time as long as we increase the problem size along one axis only -- either the population size $N$; the simulation time $t_{sim}$; or the number of runs $n$. Consequently, time is given as $\mathcal{O}(nNt_{sim})$. Monte Carlo is CPU bound and requires no memory of the earlier calculation steps.
 
 
 %\clearpage
